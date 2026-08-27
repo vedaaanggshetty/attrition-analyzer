@@ -1,0 +1,65 @@
+# ========================
+# Secrets & Environment
+# ========================
+.env
+*.env
+.env.*
+
+# ========================
+# Maven build artifacts
+# ========================
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# Maven wrapper (keep mvnw scripts but ignore OS-generated files)
+# Uncomment below if you want to ignore maven wrapper entirely:
+# .mvn/
+# mvnw
+# mvnw.cmd
+
+# ========================
+# Gradle build artifacts
+# ========================
+.gradle/
+build/
+*.gradle.kts.bak
+
+# ========================
+# IDE & Editor files
+# ========================
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ========================
+# Logs
+# ========================
+logs/
+*.log
+*.log.*
+
+# ========================
+# Spring Boot
+# ========================
+spring.log
+
+# ========================
+# Docker
+# ========================
+# docker-compose.override.yml
+
+# ========================
+# OS generated
+# ========================
+Desktop.ini
+ehthumbs.db
