@@ -1,59 +1,58 @@
 # Attrition Analyzer — Technical Implementation Plan
 
-Derived from the finalized Medium Priority backlog (19 stories, unchanged) and the case study.
-No new stories added, no existing stories altered.
+Derived from the finalized Product Backlog (`Attrition_Analyzer_Product_Backlog_Corrected.xlsx`) — 21 stories across 6 epics. No new stories added, no existing stories altered.
+
+**Technology baseline (fixed — do not change):** Java 21 · Spring Boot 4.0.8 · Spring Cloud 2025.1.3 · Maven
 
 ---
 
 ## Step 1 — Story-to-Technology Mapping
 
-| ID | Story (short) | Microservice | API | Database | Kafka? | Depends On | Frontend? | Auth Required? |
-|----|----|----|----|----|----|----|----|----|
-| US-001 | Register account | UserProfile Service → (Feign) → Authentication Service | POST /auth/register | UserProfile DB + Authentication DB | No | — | Yes | No |
-| US-002 | Login | Authentication Service | POST /auth/login | Authentication DB | No | US-001 | Yes | No |
-| US-003 | Logout | Authentication Service | POST /auth/logout | Authentication DB (optional token record) | No | US-002 | Yes | Yes |
-| US-004 | Reset password | Authentication Service | POST /auth/reset-password | Authentication DB | No | US-001 | Yes | No (must work when locked out) |
-| US-005 | View profile | UserProfile Service | GET /users/profile | UserProfile DB | No | US-002 | Yes | Yes |
-| US-006 | Update profile | UserProfile Service | PUT /users/profile | UserProfile DB | No | US-005 | Yes | Yes |
-| US-007 | View employee records | Employee Service | GET /employees | None (live from Survey API) | No | US-002 | Yes | Yes |
-| US-008 | Search/filter employees | Employee Service | GET /employees?dept=... | None | No | US-007 | Yes | Yes |
-| US-009 | View employee details | Employee Service | GET /employees/{id} | None | No | US-007 | Yes | Yes |
-| US-010 | Attrition by department | Employee Service | GET /employees/analysis/department | None | No | US-007 | Yes | Yes |
-| US-011 | Attrition by job role | Employee Service | GET /employees/analysis/job-role | None | No | US-007 | Yes | Yes |
-| US-012 | Attrition by salary | Employee Service | GET /employees/analysis/salary | None | No | US-007 | Yes | Yes |
-| US-013 | Attrition by tenure | Employee Service | GET /employees/analysis/tenure | None | No | US-007 | Yes | Yes |
-| US-014 | Attrition by overtime | Employee Service | GET /employees/analysis/overtime | None | No | US-007 | Yes | Yes |
-| US-015 | Create notification | Notification Service | POST /notifications | Notification DB | **Yes** (consumes cached employee snapshot — see Step 3) | US-009 | Yes | Yes |
-| US-016 | Add comments | Notification Service | (field on POST /notifications) | Notification DB | No | US-015 | Yes | Yes |
-| US-017 | View notifications | Notification Service | GET /notifications | Notification DB | No | US-015 | Yes | Yes |
-| US-018 | Delete notification | Notification Service | DELETE /notifications/{id} | Notification DB | No | US-017 | Yes | Yes |
-| US-019 | Guest limited view | Employee Service (via API Gateway public route) | GET /public/employees, GET /public/analysis/department | None | No | US-007, US-010 | Yes | No |
+| ID | Story (short) | Microservice | API | Database | Kafka? | Depends On | Auth Required? |
+|----|----|----|----|----|----|----|----|
+| US-01 | Register as HR | UserProfile Service → (Feign) → Authentication Service | POST /auth/register | UserProfile DB + Authentication DB | No | — | No |
+| US-02 | HR Login | Authentication Service | POST /auth/login | Authentication DB | No | US-01 | No |
+| US-03 | HR Logout | Authentication Service | POST /auth/logout | Authentication DB | No | US-02 | Yes |
+| US-04 | Reset HR Password | Authentication Service | POST /auth/reset-password | Authentication DB | No | US-01 | No |
+| US-05 | Session Timeout | Authentication Service / API Gateway | (enforced on JWT validation, not a standalone endpoint) | Authentication DB | No | US-02 | Yes |
+| US-06 | View HR Profile | UserProfile Service | GET /users/profile | UserProfile DB | No | US-02 | Yes |
+| US-07 | Update HR Profile | UserProfile Service | PUT /users/profile | UserProfile DB | No | US-06 | Yes |
+| US-08 | View Employee Records | Employee Service | GET /employees | None (live from Survey API) | No | US-02 | Yes |
+| US-09 | Search Employee Information | Employee Service | GET /employees?property=value | None | No | US-08 | Yes |
+| US-10 | View Employee Details | Employee Service | GET /employees/{id} | None | No | US-08 | Yes |
+| US-11 | Attrition by Department | Employee Service | GET /employees/analysis/department | None | No | US-08 | Yes |
+| US-12 | Attrition by Job Role | Employee Service | GET /employees/analysis/job-role | None | No | US-08 | Yes |
+| US-13 | Attrition by Compensation | Employee Service | GET /employees/analysis/compensation | None | No | US-08 | Yes |
+| US-14 | Attrition by Demographics | Employee Service | GET /employees/analysis/demographics | None | No | US-08 | Yes |
+| US-15 | Attrition by Work-Life Balance | Employee Service | GET /employees/analysis/work-life-balance | None | No | US-08 | Yes |
+| US-16 | Attrition by Career Progression | Employee Service | GET /employees/analysis/career-progression | None | No | US-08 | Yes |
+| US-17 | Create Employee Notification | Notification Service | POST /notifications | Notification DB | **Yes** (employee snapshot cache — see Step 3) | US-10 | Yes |
+| US-18 | Add Comment to Notification | Notification Service | (field on POST /notifications) | Notification DB | No | US-17 | Yes |
+| US-19 | View My Notifications | Notification Service | GET /notifications | Notification DB | No | US-17 | Yes |
+| US-20 | Delete My Notification | Notification Service | DELETE /notifications/{id} | Notification DB | No | US-19 | Yes |
+| US-21 | Explore Attrition Info as Guest | Employee Service (public Gateway route) | GET /public/analysis/department (+ other analysis endpoints, limited) | None | No | US-11 | No |
 
 **Notes:**
-- US-016 has no separate endpoint — the comment is just a field on the same create-notification call. It's tracked as its own story for backlog visibility, not as separate technical work.
-- Employee Service intentionally has **no database** — the case study's diagram shows it connecting only to the external Survey API, not a DB icon. It fetches, filters, and aggregates live.
+- US-18 has no separate endpoint — the comment is a field on the same create-notification call.
+- US-05 (Session Timeout) is not its own API call — it's enforced whenever the Gateway validates a JWT and finds it expired/inactive; the "feature" is the expiry behavior itself.
+- US-21 is deliberately narrow per its acceptance criteria: attrition summaries only, **not** `/employees` or `/employees/{id}` — those stay HR-only.
+- Employee Service still has **no database** — all six analysis stories (US-11–US-16) compute on live data pulled from the Survey API.
 
 ---
 
 ## Step 2 — Microservices
 
-**API Gateway**
-Single entry point for the React app. Validates JWTs, applies CORS, and routes requests to the correct downstream service. Owns no business data. Also exposes the unauthenticated `/public/*` routes for Guest access (US-019).
+**API Gateway** — Single entry point for the React app. Validates JWTs (including expiry from US-05), applies CORS, and routes to the correct service. Exposes the narrow `/public/*` routes for Guest access (US-21). Owns no business data.
 
-**Eureka Discovery Service**
-Lets every other service register itself and find each other by name instead of hardcoded URLs/ports. Implements no stories directly — it's platform plumbing.
+**Eureka Discovery Service** — Lets every service register and find each other by name. Implements no story directly.
 
-**Authentication Service**
-Owns login credentials and JWT issuance/validation. Implements US-002, US-003, US-004, and the credential half of US-001. Talks to UserProfile Service (receives the registration handoff via Feign) and to the API Gateway (token validation).
+**Authentication Service** — Owns credentials and JWT issuance/validation/expiry. Implements US-02, US-03, US-04, US-05, and the credential half of US-01. Talks to UserProfile Service (Feign handoff on registration) and the API Gateway.
 
-**UserProfile Service**
-Owns personal/profile data (name, contact info, role). Implements the profile half of US-001, plus US-005 and US-006. Talks to Authentication Service via Feign during registration to hand off credentials.
+**UserProfile Service** — Owns profile data. Implements the profile half of US-01, plus US-06 and US-07. Talks to Authentication Service via Feign during registration.
 
-**Employee Service**
-Fetches, filters, and analyzes employee data from the external Survey API. Implements US-007–US-014 and the data half of US-019. Talks only to the external Survey API — no other internal service calls in, except that Notification Service reads employee snapshots from it (see Step 3).
+**Employee Service** — Fetches, filters, and analyzes employee data from the external Survey API. Implements US-08–US-16 and the data half of US-21. No inbound calls from other services except Notification Service reading its snapshot events.
 
-**Notification Service**
-Owns HR notifications (employee reference + comment + timestamp). Implements US-015–US-018. Consumes employee snapshot events from Employee Service via Kafka so it has employee details on hand when a notification is created.
+**Notification Service** — Owns notifications (employee reference + comment + timestamp). Implements US-17–US-20. Consumes employee snapshot events from Employee Service via Kafka.
 
 ---
 
@@ -62,119 +61,91 @@ Owns HR notifications (employee reference + comment + timestamp). Implements US-
 | Interaction | Method | Reason |
 |---|---|---|
 | React → API Gateway | REST | Standard client-facing entry point |
-| API Gateway → all services | REST | Simple routing, no benefit from async here |
-| UserProfile Service → Authentication Service (registration) | REST/Feign | One-time, synchronous handoff during signup — needs an immediate success/failure response, matches the case study diagram's "Feign Connect" arrow |
-| Employee Service → external Survey API | REST | It's a third-party HTTP API — no other option |
+| API Gateway → all services | REST | Simple routing, no async benefit |
+| UserProfile Service → Authentication Service (US-01 registration) | REST/Feign | One-time synchronous handoff, needs an immediate success/failure result |
+| Employee Service → external Survey API | REST | Third-party HTTP API |
 | **Employee Service → Notification Service** | **Kafka** | See below |
-| Notification Service → Employee Service (fallback, if no cached snapshot exists) | REST/Feign | Simple synchronous fallback for the rare case a notification is created before any Kafka event arrived |
+| Notification Service → Employee Service (fallback only) | REST/Feign | Rare case: create a notification before any snapshot event has arrived |
 
-**Why Kafka, specifically:**
-The case study's architecture diagram places Kafka directly between Employee Service and Notification Service, and describes Notification Service as retrieving employee data rather than looking it up live. The simplest, real justification for that: when an HR user views an employee (US-009), Employee Service publishes a small "employee snapshot" event (id, name, department, job role) to a Kafka topic. Notification Service consumes it and keeps a small local cache. Then when the same HR user creates a notification a moment later (US-015), Notification Service already has the employee data on hand and doesn't need to make a live call back to Employee Service (which itself depends on an external Survey API that could be slow or briefly down).
-
-This keeps Kafka's use limited to one clear, justified spot rather than routing everything through it. Everything else stays plain REST, which is simpler to build and test.
+**Why Kafka:** When an HR user views an employee (US-10), Employee Service publishes a small employee snapshot event (id, name, department, job role) to Kafka. Notification Service consumes it and keeps a small local cache, so when the same HR user creates a notification a moment later (US-17), the data is already on hand — no live dependency on Employee Service (and transitively, the external Survey API) at the exact moment of writing a notification. Everything else stays plain REST/Feign.
 
 ---
 
 ## Step 4 — Database Design
 
 **Authentication DB (MySQL)**
-- Table `credentials`
-  - `user_id` (PK, matches UserProfile's user_id)
-  - `username` / `email`
-  - `password_hash`
-  - `role` (HR_USER)
-  - `created_at`
+- `credentials`: `user_id` (PK), `username`/`email`, `password_hash`, `role`, `created_at`
+- (US-05) session/token expiry is handled via JWT `exp` claim — no separate session table required unless you choose to support server-side logout/blacklisting.
 
 **UserProfile DB (MySQL)**
-- Table `profiles`
-  - `user_id` (PK)
-  - `full_name`
-  - `email`
-  - `phone` (optional)
-  - `created_at`, `updated_at`
+- `profiles`: `user_id` (PK), `full_name`, `email`, `phone`, `created_at`, `updated_at`
 
-**Employee Service — no database.** Data is fetched live from the external Survey API on each request.
+**Employee Service — no database.** All employee/attrition data is fetched live from the Survey API.
 
-**Notification DB (MySQL or MongoDB — either works, MongoDB is a fine fit since comments are unstructured text)**
-- Collection/Table `notifications`
-  - `id` (PK)
-  - `employee_id`
-  - `employee_name`, `department` (denormalized snapshot, cheap and avoids a join/call on every read)
-  - `hr_user_id` (who created it)
-  - `comment`
-  - `created_at`
-
-- Collection/Table `employee_cache` (small, populated from Kafka)
-  - `employee_id` (PK)
-  - `employee_name`, `department`, `job_role`
-  - `last_updated`
-
-No other tables are needed at this scope. Nothing here needs heavy normalization — this is a small, focused dataset per service.
+**Notification DB (MySQL or MongoDB)**
+- `notifications`: `id`, `employee_id`, `employee_name`, `department`, `hr_user_id`, `comment`, `created_at`
+- `employee_cache` (populated via Kafka): `employee_id` (PK), `employee_name`, `department`, `job_role`, `last_updated`
 
 ---
 
 ## Step 5 — API List
 
-| Method | Endpoint | Purpose | Auth Required | Service |
+| Method | Endpoint | Purpose | Auth | Service |
 |---|---|---|---|---|
-| POST | /auth/register | Create a new HR account | No | UserProfile → Authentication |
-| POST | /auth/login | Authenticate and issue JWT | No | Authentication |
-| POST | /auth/logout | Invalidate current session | Yes | Authentication |
-| POST | /auth/reset-password | Request/confirm password reset | No | Authentication |
-| GET | /users/profile | View own profile | Yes | UserProfile |
-| PUT | /users/profile | Update own profile | Yes | UserProfile |
-| GET | /employees | List employee records | Yes | Employee |
-| GET | /employees?department=X | Filter employees | Yes | Employee |
-| GET | /employees/{id} | View one employee's details | Yes | Employee |
-| GET | /employees/analysis/department | Attrition by department | Yes | Employee |
-| GET | /employees/analysis/job-role | Attrition by job role | Yes | Employee |
-| GET | /employees/analysis/salary | Attrition by salary | Yes | Employee |
-| GET | /employees/analysis/tenure | Attrition by years at company | Yes | Employee |
-| GET | /employees/analysis/overtime | Attrition by overtime | Yes | Employee |
-| POST | /notifications | Create notification (with comment) | Yes | Notification |
-| GET | /notifications | View own notifications | Yes | Notification |
-| DELETE | /notifications/{id} | Delete own notification | Yes | Notification |
-| GET | /public/employees | Guest — limited employee view | No | Employee (via Gateway public route) |
-| GET | /public/analysis/department | Guest — limited attrition view | No | Employee (via Gateway public route) |
+| POST | /auth/register | US-01 register | No | UserProfile → Authentication |
+| POST | /auth/login | US-02 login | No | Authentication |
+| POST | /auth/logout | US-03 logout | Yes | Authentication |
+| POST | /auth/reset-password | US-04 reset password | No | Authentication |
+| GET | /users/profile | US-06 view profile | Yes | UserProfile |
+| PUT | /users/profile | US-07 update profile | Yes | UserProfile |
+| GET | /employees | US-08 view records | Yes | Employee |
+| GET | /employees?property=value | US-09 search | Yes | Employee |
+| GET | /employees/{id} | US-10 view details | Yes | Employee |
+| GET | /employees/analysis/department | US-11 | Yes | Employee |
+| GET | /employees/analysis/job-role | US-12 | Yes | Employee |
+| GET | /employees/analysis/compensation | US-13 | Yes | Employee |
+| GET | /employees/analysis/demographics | US-14 | Yes | Employee |
+| GET | /employees/analysis/work-life-balance | US-15 | Yes | Employee |
+| GET | /employees/analysis/career-progression | US-16 | Yes | Employee |
+| POST | /notifications | US-17 + US-18 (comment is a field) | Yes | Notification |
+| GET | /notifications | US-19 | Yes | Notification |
+| DELETE | /notifications/{id} | US-20 | Yes | Notification |
+| GET | /public/analysis/{dimension} | US-21 (limited set, no /employees or /employees/{id}) | No | Employee (via Gateway public route) |
 
-Not implementing these yet — this is the planning list only.
+Not implementing these yet — planning list only.
 
 ---
 
 ## Step 6 — Development Order
 
-Your proposed order is sound and matches the dependency chain from Step 1. One small refinement: **Guest Access (Phase 7) only touches Employee Service and the Gateway**, so it can technically slot in right after Phase 5 instead of waiting until after Notifications. Keeping it last (as you had it) is also fine and arguably simpler to reason about — either works, so the order below keeps your structure with that noted as optional.
-
-- **Phase 0 — Environment Setup:** JDK, Maven, Spring Boot, Node/React, Docker, MySQL, Kafka, Git.
-- **Phase 1 — Microservice Foundation:** Eureka, API Gateway, base service skeletons, shared config.
-- **Phase 2 — Authentication:** US-001 (credential half), US-002, US-003, US-004.
-- **Phase 3 — User Profile:** US-001 (profile half), US-005, US-006.
-- **Phase 4 — Employee Service:** US-007, US-008, US-009, Survey API integration.
-- **Phase 5 — Attrition Analysis:** US-010–US-014.
-- **Phase 6 — Notification Service:** US-015–US-018, Kafka snapshot cache.
-- **Phase 7 — Guest Access:** US-019.
-  *(Optional: can move to right after Phase 5, since it has no dependency on Notifications.)*
+- **Phase 0 — Environment:** JDK 21, Maven, Spring Boot 4.0.8, Spring Cloud 2025.1.3, Node/React, Docker, MySQL, Kafka, Git.
+- **Phase 1 — Microservice Foundation:** Eureka, API Gateway, service skeletons, health checks.
+- **Phase 2 — Authentication:** US-01 (credential half), US-02, US-03, US-04, US-05.
+- **Phase 3 — User Profile:** US-01 (profile half), US-06, US-07.
+- **Phase 4 — Employee Service:** US-08, US-09, US-10, Survey API integration.
+- **Phase 5 — Attrition Analysis:** US-11–US-16.
+- **Phase 6 — Notification Service:** US-17–US-20, Kafka snapshot cache.
+- **Phase 7 — Guest Experience:** US-21, public Gateway routes, Guest restrictions.
+  *(Could move earlier since it only needs Employee Service + Gateway — keeping it last is simpler to reason about either way.)*
 
 ---
 
 ## Step 7 — Antigravity / Windows Environment Setup
 
-1. **JDK:** Install JDK 21 (LTS). Set `JAVA_HOME` to the install path and add `%JAVA_HOME%\bin` to `PATH`.
-2. **Maven:** Install Maven, set `MAVEN_HOME`, add `%MAVEN_HOME%\bin` to `PATH`. Verify with `mvn -v`.
-3. **Spring Boot:** No separate install — each service is a Maven project using `spring-boot-starter-parent` (3.x). Use Spring Initializr (via Antigravity or start.spring.io) per service.
-4. **Node.js / React:** Install Node LTS. Scaffold the frontend with Vite (`npm create vite@latest frontend -- --template react`) — lighter and faster than CRA.
-5. **Docker Desktop:** Install with the WSL2 backend enabled. In Docker Desktop settings, point the **Docker data root** to your D: drive (Settings → Resources → Advanced) so container images/volumes don't fill C:.
-6. **Kafka & MySQL:** Run both via `docker-compose.yml` at the repo root rather than installing natively — keeps versions consistent and easy to tear down. Map their volumes to a folder on D: (e.g., `D:\attrition-analyzer-data\mysql`, `D:\attrition-analyzer-data\kafka`).
-7. **Git:** Install Git for Windows, configure `user.name`/`user.email`, clone the repo onto D: if you'd rather keep C: light (e.g., `D:\projects\attrition-analyzer`).
-8. **Environment variables:** Keep secrets (JWT signing key, DB passwords) out of source — use a `.env` file (git-ignored) or `application-local.yml` per service, with a `.env.example` committed for reference.
-9. **In Antigravity:** Open the repo root as the workspace, add each service folder as a Maven module/subproject so Antigravity can index them independently, and point the run/debug configuration for the frontend at the Vite dev server port.
+1. **JDK:** Install JDK 21. Set `JAVA_HOME`, add `%JAVA_HOME%\bin` to `PATH`.
+2. **Maven:** Install, set `MAVEN_HOME`, verify with `mvn -v`.
+3. **Spring Boot / Spring Cloud:** Each service is a Maven project on `spring-boot-starter-parent` **4.0.8**, with Spring Cloud BOM **2025.1.3** for Eureka/Gateway/OpenFeign. Scaffold via start.spring.io or Antigravity's project templates — confirm the generator offers exactly these versions before accepting defaults.
+4. **Node.js / React:** Node LTS, scaffold frontend with Vite.
+5. **Docker Desktop:** WSL2 backend; move the Docker data root to D: (Settings → Resources → Advanced).
+6. **Kafka & MySQL:** Run via `docker-compose.yml` at repo root; map volumes to D: (e.g., `D:\attrition-analyzer-data\mysql`, `...\kafka`).
+7. **Git:** Configure user.name/email; clone to D: if you want to keep C: light.
+8. **Environment variables:** Secrets (JWT signing key, DB passwords) via `.env` (git-ignored) with a committed `.env.example`.
+9. **In Antigravity:** Open repo root as workspace, add each service as a Maven module, point frontend run config at the Vite dev server.
 
 ---
 
 ## Step 8 — Repository Structure
-
-Your proposed structure is good as-is. One addition: a `docs/` folder for this plan and future architecture notes.
-
+  
 ```
 attrition-analyzer/
   api-gateway/
@@ -199,37 +170,41 @@ attrition-analyzer/
 # Attrition Analyzer — CLAUDE.md
 
 ## Project Overview
-Microservices application to analyze employee attrition patterns (department, job role,
-salary, tenure, overtime) and let HR users flag retention concerns via notifications.
-Guest users get a limited, read-only view. Employee data comes from an external Survey API.
+Microservices application analyzing employee attrition (department, job role, compensation,
+demographics, work-life balance, career progression). HR users flag retention concerns via
+notifications. Guests get a limited attrition-summary view only — no individual employee
+records, no HR-only features. Employee data comes from an external Survey API.
 
 ## Architecture
-React frontend → API Gateway (JWT validation, CORS) → microservices, registered via Eureka.
+React → API Gateway (JWT validation, CORS, public Guest routes) → microservices via Eureka.
 Kafka carries employee snapshot events from Employee Service to Notification Service.
 
 ## Services
 - api-gateway — routing, JWT validation, public/guest routes
 - discovery-service — Eureka
-- authentication-service — login, logout, password reset, JWT issuance (MySQL)
+- authentication-service — login, logout, password reset, session timeout, JWT (MySQL)
 - user-profile-service — registration (profile half), profile view/update (MySQL)
-- employee-service — employee retrieval, filtering, attrition analysis (no DB; calls Survey API)
+- employee-service — records, search, details, 6 attrition analyses (no DB; calls Survey API)
 - notification-service — create/view/delete notifications, Kafka consumer (MySQL/MongoDB)
 
-## Technology Stack
-Java 21, Spring Boot 3.x, Spring Cloud (Eureka, Gateway, OpenFeign), Kafka, MySQL, MongoDB
-(notification service only, if used), React (Vite), Docker Compose, JWT (Spring Security).
+## Technology Stack (fixed)
+Java 21, Spring Boot 4.0.8, Spring Cloud 2025.1.3, Maven, Kafka, MySQL, React (Vite),
+Docker Compose, JWT via Spring Security. Do not change these versions without explicit
+instruction.
 
 ## Important Commands
-- `docker compose up -d` — start MySQL, Kafka, Survey API container
+- `docker compose up -d` — MySQL, Kafka, Survey API container
 - `mvn spring-boot:run` — run a service from its module directory
 - `npm run dev` — run the frontend
 - `mvn test` — run tests for a service
 
 ## Coding Rules
-- Follow the story list in docs/ — do not add scope not tied to a story.
+- Follow the 21-story backlog in docs/ — do not add scope not tied to a story.
 - Keep each service's database private to that service.
 - Map external Survey API fields to internal DTOs — never expose the raw external schema.
-- Keep synchronous calls synchronous; only use Kafka where already specified.
+- Keep synchronous calls synchronous; only use Kafka for the Employee→Notification snapshot.
+- Guest-facing endpoints must stay limited to attrition summaries — never expose
+  /employees or /employees/{id} without authentication.
 
 ## Testing Rules
 - Write a test alongside any new endpoint before marking a story complete.
@@ -237,13 +212,13 @@ Java 21, Spring Boot 3.x, Spring Cloud (Eureka, Gateway, OpenFeign), Kafka, MySQ
 
 ## Security Rules
 - Never commit secrets, passwords, or JWT signing keys — use .env / application-local.yml.
-- Passwords are hashed (BCrypt), never stored or logged in plain text.
+- Passwords hashed (BCrypt), never stored or logged in plain text.
 - Never log JWTs or password fields.
 
 ## Rules for Claude Code
 - Inspect the repo and this file before making changes.
 - Implement one phase/story at a time — do not jump ahead.
-- Show a plan before major or structural changes and wait for approval.
+- Show a plan before major/structural changes and wait for approval.
 - Never make destructive DB/infrastructure changes without explicit confirmation.
 - Summarize files changed, tests added/run, and remaining work at the end of each task.
 ```
@@ -261,7 +236,8 @@ notifications yet.
 
 Before making any changes:
 1. Inspect the current repository structure and report exactly what already exists.
-2. Read CLAUDE.md if it is present, and follow its rules.
+2. Read CLAUDE.md if it is present, and follow its rules — including the fixed technology
+   baseline (Java 21, Spring Boot 4.0.8, Spring Cloud 2025.1.3).
 3. Propose a plan for this phase and wait for my approval before creating or modifying
    files.
 
@@ -269,7 +245,7 @@ Once I approve the plan, your task is to establish the project foundation:
 1. Create the base repository structure if it does not already exist:
    api-gateway, discovery-service, authentication-service, user-profile-service,
    employee-service, notification-service, frontend, docker-compose.yml, README.md.
-2. Set up each backend folder as a minimal Spring Boot 3.x / Java 21 Maven project
+2. Set up each backend folder as a minimal Spring Boot 4.0.8 / Java 21 Maven project
    (no business logic yet — just a valid, runnable skeleton).
 3. Set up discovery-service as a working Eureka server.
 4. Set up api-gateway as a working Spring Cloud Gateway that registers with Eureka.
@@ -283,7 +259,7 @@ Once I approve the plan, your task is to establish the project foundation:
 
 When finished, summarize:
 - Files/folders created or changed
-- Services that start successfully and are confirmed working
+- Services confirmed working and registering with Eureka
 - Any tests run and their results
 - Problems encountered
 - What remains before Phase 2 (Authentication) can begin
