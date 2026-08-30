@@ -63,3 +63,16 @@ spring.log
 # ========================
 Desktop.ini
 ehthumbs.db
+
+# ========================
+# Reference diagrams (kept locally, not tracked in Git)
+# ========================
+docs/diagrams/01_Use_caseDiagram.png
+docs/diagrams/02_RegistrationFlow.png
+docs/diagrams/03_System_Architecture.png
+docs/diagrams/04_SearchEmployeeFlow.png
+docs/diagrams/05_AttritionAnalysisFlow.png
+docs/diagrams/06_LoginFlow.png
+docs/diagrams/07_CreateNotificationFlow.png
+docs/diagrams/08_ServiceDiscovery.png
+docs/diagrams/09_DatabaseOwnership.png
