@@ -59,6 +59,11 @@ spring.log
 # docker-compose.override.yml
 
 # ========================
+# Local-only reference docs
+# ========================
+PROJECT-HANDBOOK/
+
+# ========================
 # OS generated
 # ========================
 Desktop.ini
@@ -76,3 +81,5 @@ docs/diagrams/06_LoginFlow.png
 docs/diagrams/07_CreateNotificationFlow.png
 docs/diagrams/08_ServiceDiscovery.png
 docs/diagrams/09_DatabaseOwnership.png
+
+
