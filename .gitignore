@@ -69,6 +69,9 @@ PROJECT-HANDBOOK/
 Desktop.ini
 ehthumbs.db
 
+# docs
+# docs/technical-plan.md
+
 # ========================
 # Reference diagrams (kept locally, not tracked in Git)
 # ========================
@@ -82,4 +85,14 @@ docs/diagrams/07_CreateNotificationFlow.png
 docs/diagrams/08_ServiceDiscovery.png
 docs/diagrams/09_DatabaseOwnership.png
 
+# ========================
+# Local-only reference docs
+# ========================
+PROJECT-HANDBOOK/
 
+# ========================
+# Excel Files
+# ========================
+*.xlsx
+*.xls
+*.csv
