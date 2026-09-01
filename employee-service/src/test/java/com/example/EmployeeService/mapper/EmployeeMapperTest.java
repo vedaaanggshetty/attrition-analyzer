@@ -11,31 +11,10 @@ class EmployeeMapperTest {
 
 	@Test
 	void mapsEveryVerifiedFieldFromSurveyResponseToEmployeeDto() {
-		SurveyEmployeeResponse response = new SurveyEmployeeResponse(
-				"3012-1A41",
-				"Leonelle",
-				"Simco",
-				"Female",
-				30,
-				"Some Travel",
-				"Sales",
-				27,
-				"IL",
-				"White",
-				5,
-				"Marketing",
-				"Sales Executive",
-				"Divorced",
-				102059,
-				1,
-				"No",
-				"2012-01-03",
-				"No",
-				10,
-				4,
-				9,
-				7,
-				"5a94");
+		SurveyEmployeeResponse response = new SurveyEmployeeResponse("3012-1A41", "Leonelle", "Simco", "Female", 30,
+				"Some Travel", "Sales", 27, "IL",
+				"White", 5, "Marketing", "Sales Executive", "Divorced", 102059, 1, "No", "2012-01-03", "No", 10, 4, 9,
+				7, "5a94");
 
 		EmployeeDto dto = EmployeeMapper.toEmployeeDto(response);
 
