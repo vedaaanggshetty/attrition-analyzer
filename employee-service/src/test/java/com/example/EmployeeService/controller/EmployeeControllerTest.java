@@ -1,6 +1,7 @@
 package com.example.EmployeeService.controller;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -52,5 +53,58 @@ class EmployeeControllerTest {
 		mockMvc.perform(get("/employees"))
 				.andExpect(status().isServiceUnavailable())
 				.andExpect(jsonPath("$.message").value("Failed to retrieve employees from Survey API"));
+	}
+
+	@Test
+	void searchReturnsMatchingEmployeesWhenPropertyAndValueGiven() throws Exception {
+		given(employeeService.findByProperty("Department", "Sales")).willReturn(List.of(sampleEmployeeDto()));
+
+		mockMvc.perform(get("/employees").param("property", "Department").param("value", "Sales"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].department").value("Sales"));
+	}
+
+	@Test
+	void searchReturnsEmptyArrayWhenNoRecordsMatch() throws Exception {
+		given(employeeService.findByProperty("Department", "NoSuchDept")).willReturn(List.of());
+
+		mockMvc.perform(get("/employees").param("property", "Department").param("value", "NoSuchDept"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.length()").value(0));
+	}
+
+	@Test
+	void searchReturnsServiceUnavailableWhenSurveyApiFails() throws Exception {
+		given(employeeService.findByProperty("Department", "Sales"))
+				.willThrow(new SurveyApiException("Failed to query Survey API for Department", new RuntimeException()));
+
+		mockMvc.perform(get("/employees").param("property", "Department").param("value", "Sales"))
+				.andExpect(status().isServiceUnavailable())
+				.andExpect(jsonPath("$.message").value("Failed to query Survey API for Department"));
+	}
+
+	@Test
+	void searchReturnsBadRequestWhenValueIsMissing() throws Exception {
+		mockMvc.perform(get("/employees").param("property", "Department"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.message").value("Both 'property' and 'value' query parameters are required for search"));
+
+		verifyNoInteractions(employeeService);
+	}
+
+	@Test
+	void searchReturnsBadRequestWhenPropertyIsMissing() throws Exception {
+		mockMvc.perform(get("/employees").param("value", "Sales"))
+				.andExpect(status().isBadRequest());
+
+		verifyNoInteractions(employeeService);
+	}
+
+	@Test
+	void searchReturnsBadRequestWhenPropertyIsBlank() throws Exception {
+		mockMvc.perform(get("/employees").param("property", "").param("value", "Sales"))
+				.andExpect(status().isBadRequest());
+
+		verifyNoInteractions(employeeService);
 	}
 }
