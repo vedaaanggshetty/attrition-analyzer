@@ -1,0 +1,54 @@
+#  help build compose
+# docker compose -f docker-compose.yml build
+# docker compose -f docker-compose.yml up
+# docker compose -f docker-compose.yml down
+#  -
+#
+# Scope: discovery-service, api-gateway, employee-service ONLY.
+# Each service's jar must already be built (mvnw clean package) before
+# `docker compose build` — these Dockerfiles just package the jar, they
+# don't run Maven themselves.
+
+services:
+  discovery-service:
+    build:
+      context: ./discovery-service
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    networks:
+      - attrition-net
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      JAVA_OPTS: "-Deureka.client.service-url.defaultZone=http://discovery-service:8761/eureka/"
+    depends_on:
+      - discovery-service
+    networks:
+      - attrition-net
+
+  employee-service:
+    build:
+      context: ./employee-service
+    container_name: employee-service
+    ports:
+      - "8083:8083"
+    environment:
+      JAVA_OPTS: >-
+        -Deureka.client.service-url.defaultZone=http://discovery-service:8761/eureka/
+        -Dsurvey-api.base-url=http://host.docker.internal:3232
+    depends_on:
+      - discovery-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - attrition-net
+
+networks:
+  attrition-net:
+    driver: bridge
