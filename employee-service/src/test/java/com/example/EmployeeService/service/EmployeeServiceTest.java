@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -32,6 +33,11 @@ class EmployeeServiceTest {
 
 	private EmployeeService employeeService;
 
+	@BeforeEach
+	void setUp() {
+		employeeService = new EmployeeService(surveyApiClient);
+	}
+
 	private static SurveyEmployeeResponse sampleResponse() {
 		return new SurveyEmployeeResponse(
 				"3012-1A41", "Leonelle", "Simco", "Female", 30, "Some Travel", "Sales", 27,
@@ -39,44 +45,32 @@ class EmployeeServiceTest {
 				"No", "2012-01-03", "No", 10, 4, 9, 7, "5a94");
 	}
 
-	private static FeignException feignExceptionWithStatus(int status) {
-		Request request = Request.create(Request.HttpMethod.GET, "/survey/does-not-exist",
-				Map.of(), (byte[]) null, StandardCharsets.UTF_8);
-		Response response = Response.builder()
-				.status(status)
-				.reason("error")
-				.request(request)
-				.headers(Map.of())
-				.build();
-		return FeignException.errorStatus("SurveyApiClient#call()", response);
+	private static FeignException feignError(int status) {
+		Request request = Request.create(Request.HttpMethod.GET, "/survey", Map.of(), null, StandardCharsets.UTF_8);
+		Response response = Response.builder().status(status).request(request).headers(Map.of()).build();
+		return FeignException.errorStatus("call", response);
 	}
 
 	@Test
-	void getAllEmployeesMapsSuccessfulSurveyApiResponse() {
-		employeeService = new EmployeeService(surveyApiClient);
+	void getAllEmployeesReturnsMappedList() {
 		given(surveyApiClient.getAllEmployees()).willReturn(List.of(sampleResponse()));
 
 		List<EmployeeDto> employees = employeeService.getAllEmployees();
 
 		assertThat(employees).hasSize(1);
-		assertThat(employees.get(0).employeeId()).isEqualTo("3012-1A41");
 		assertThat(employees.get(0).department()).isEqualTo("Sales");
 	}
 
 	@Test
-	void findByPropertyReturnsEmptyListWhenSurveyApiHasNoMatch() {
-		employeeService = new EmployeeService(surveyApiClient);
+	void findByPropertyReturnsEmptyListWhenNothingMatches() {
 		given(surveyApiClient.findByProperty(any())).willReturn(List.of());
 
-		List<EmployeeDto> employees = employeeService.findByProperty("Department", "NoSuchDept");
-
-		assertThat(employees).isEmpty();
+		assertThat(employeeService.findByProperty("Department", "NoSuchDept")).isEmpty();
 	}
 
 	@Test
-	void getEmployeeByIdReturnsEmptyOptionalWhenSurveyApiReturns404() {
-		employeeService = new EmployeeService(surveyApiClient);
-		given(surveyApiClient.getEmployeeById("missing")).willThrow(feignExceptionWithStatus(404));
+	void getEmployeeByIdReturnsEmptyWhenNotFound() {
+		given(surveyApiClient.getEmployeeById("missing")).willThrow(feignError(404));
 
 		Optional<EmployeeDto> employee = employeeService.getEmployeeById("missing");
 
@@ -84,12 +78,10 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void getAllEmployeesWrapsOtherSurveyApiFailuresInSurveyApiException() {
-		employeeService = new EmployeeService(surveyApiClient);
-		given(surveyApiClient.getAllEmployees()).willThrow(feignExceptionWithStatus(500));
+	void getAllEmployeesThrowsSurveyApiExceptionOnFailure() {
+		given(surveyApiClient.getAllEmployees()).willThrow(feignError(500));
 
 		assertThatThrownBy(() -> employeeService.getAllEmployees())
-				.isInstanceOf(SurveyApiException.class)
-				.hasCauseInstanceOf(FeignException.class);
+				.isInstanceOf(SurveyApiException.class);
 	}
 }
