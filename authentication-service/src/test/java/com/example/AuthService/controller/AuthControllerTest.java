@@ -3,6 +3,7 @@ package com.example.AuthService.controller;
 import com.example.AuthService.dto.LoginRequest;
 import com.example.AuthService.dto.LoginResponse;
 import com.example.AuthService.exception.InvalidCredentialsException;
+import com.example.AuthService.exception.InvalidResetTokenException;
 import com.example.AuthService.security.JwtAuthenticationFilter;
 import com.example.AuthService.security.JwtService;
 import com.example.AuthService.security.SecurityConfig;
@@ -16,7 +17,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.UUID;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -31,6 +36,9 @@ class AuthControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private JwtService jwtService;
 
     @MockitoBean
     private AuthService authService;
@@ -70,6 +78,69 @@ class AuthControllerTest {
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void logout_withValidToken_returns200() throws Exception {
+        String token = jwtService.generateToken(UUID.randomUUID(), "hr@example.com", "HR");
+
+        mockMvc.perform(post("/auth/logout")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Logged out successfully"));
+    }
+
+    @Test
+    void logout_withoutToken_returns403() throws Exception {
+        mockMvc.perform(post("/auth/logout"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void requestPasswordReset_withValidEmail_returns200() throws Exception {
+        doNothing().when(authService).requestPasswordReset(any());
+
+        mockMvc.perform(post("/auth/reset-password/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"hr@example.com\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void requestPasswordReset_withBlankEmail_returns400() throws Exception {
+        mockMvc.perform(post("/auth/reset-password/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void confirmPasswordReset_withValidRequest_returns200() throws Exception {
+        doNothing().when(authService).confirmPasswordReset(any());
+
+        mockMvc.perform(post("/auth/reset-password/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"some-token\",\"newPassword\":\"NewPassword123!\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void confirmPasswordReset_withInvalidToken_returns400() throws Exception {
+        doThrow(new InvalidResetTokenException()).when(authService).confirmPasswordReset(any());
+
+        mockMvc.perform(post("/auth/reset-password/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"bad-token\",\"newPassword\":\"NewPassword123!\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid or expired reset token"));
+    }
+
+    @Test
+    void confirmPasswordReset_withBlankToken_returns400() throws Exception {
+        mockMvc.perform(post("/auth/reset-password/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"\",\"newPassword\":\"NewPassword123!\"}"))
                 .andExpect(status().isBadRequest());
     }
 }

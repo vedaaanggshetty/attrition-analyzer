@@ -79,4 +79,13 @@ public class Credential {
     public Instant getCreatedAt() {
         return createdAt;
     }
+
+    /**
+     * Replaces this credential's password hash (used by the password-reset
+     * confirm flow). Always assign an already-BCrypt-hashed value here -
+     * never a plaintext password.
+     */
+    public void changePassword(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+    }
 }

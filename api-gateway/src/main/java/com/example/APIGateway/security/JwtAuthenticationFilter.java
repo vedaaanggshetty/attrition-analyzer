@@ -1,4 +1,4 @@
-package com.example.AuthService.security;
+package com.example.APIGateway.security;
 
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -21,14 +21,16 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Reads the Authorization header, validates a Bearer JWT via {@link JwtService},
- * and populates the {@link SecurityContextHolder} on success.
+ * Reads the Authorization header, validates a Bearer JWT via
+ * {@link JwtService}, and populates the {@link SecurityContextHolder} on
+ * success. Mirrors authentication-service/user-profile-service's filter of
+ * the same name - each service owns its own copy since there is no shared
+ * library in this project.
  *
- * On any failure (missing header, wrong scheme, invalid signature, expired
- * token, missing required claims) the filter simply leaves the request
- * unauthenticated and continues the chain - it never throws back to the
- * client. The eventual 401/403 is produced by Spring Security's normal
- * authorization rules, not by this filter.
+ * On any failure the filter simply leaves the request unauthenticated and
+ * continues the chain - it never throws back to the client. The eventual
+ * 401 is produced by Spring Security's normal authorization rules (see
+ * {@code SecurityConfig}), not by this filter.
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {

@@ -1,4 +1,4 @@
-package com.example.AuthService.security;
+package com.example.APIGateway.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -13,16 +13,22 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Unit test for {@link JwtService} (parse/verify-only - see class Javadoc).
+ * Tokens are built manually with the same secret since the Gateway never
+ * issues its own tokens.
+ */
 class JwtServiceTest {
 
     private static final String SECRET = "unit-test-secret-value-not-for-production-use-1234567890";
 
-    private final JwtService jwtService = new JwtService(SECRET, 3600000L);
+    private final JwtService jwtService = new JwtService(SECRET);
+    private final SecretKey signingKey = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
 
     @Test
     void parseClaims_withValidToken_returnsUserIdEmailAndRole() {
         UUID userId = UUID.randomUUID();
-        String token = jwtService.generateToken(userId, "hr@example.com", "HR");
+        String token = buildToken(userId, "hr@example.com", "HR", System.currentTimeMillis() + 3600000L);
 
         Optional<Claims> claims = jwtService.parseClaims(token);
 
@@ -34,8 +40,7 @@ class JwtServiceTest {
 
     @Test
     void parseClaims_withExpiredToken_returnsEmpty() {
-        JwtService shortLivedService = new JwtService(SECRET, -1000L);
-        String expiredToken = shortLivedService.generateToken(UUID.randomUUID(), "hr@example.com", "HR");
+        String expiredToken = buildToken(UUID.randomUUID(), "hr@example.com", "HR", System.currentTimeMillis() - 1000L);
 
         Optional<Claims> claims = jwtService.parseClaims(expiredToken);
 
@@ -65,5 +70,16 @@ class JwtServiceTest {
         Optional<Claims> claims = jwtService.parseClaims("not-a-valid-jwt-token");
 
         assertThat(claims).isEmpty();
+    }
+
+    private String buildToken(UUID userId, String email, String role, long expirationEpochMillis) {
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim(JwtService.EMAIL_CLAIM, email)
+                .claim(JwtService.ROLE_CLAIM, role)
+                .issuedAt(new Date())
+                .expiration(new Date(expirationEpochMillis))
+                .signWith(signingKey)
+                .compact();
     }
 }

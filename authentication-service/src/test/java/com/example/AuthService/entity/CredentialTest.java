@@ -32,4 +32,13 @@ class CredentialTest {
         // @CreationTimestamp is populated by Hibernate at insert time, not by the constructor.
         assertThat(credential.getCreatedAt()).isNull();
     }
+
+    @Test
+    void changePassword_replacesStoredPasswordHash() {
+        Credential credential = new Credential(UUID.randomUUID(), "hr@example.com", "old-hash", Role.HR);
+
+        credential.changePassword("new-hash");
+
+        assertThat(credential.getPasswordHash()).isEqualTo("new-hash");
+    }
 }

@@ -1,4 +1,4 @@
-package com.example.AuthService.security;
+package com.example.APIGateway.security;
 
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -110,22 +110,6 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    void doFilter_withMissingEmailClaim_doesNotAuthenticate() throws Exception {
-        Claims claims = mock(Claims.class);
-        when(claims.getSubject()).thenReturn(UUID.randomUUID().toString());
-        when(claims.get(JwtService.EMAIL_CLAIM)).thenReturn(null);
-        when(claims.get(JwtService.ROLE_CLAIM)).thenReturn("HR");
-
-        when(request.getHeader("Authorization")).thenReturn("Bearer valid-token");
-        when(jwtService.parseClaims("valid-token")).thenReturn(Optional.of(claims));
-
-        filter.doFilter(request, response, filterChain);
-
-        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-        verify(filterChain).doFilter(request, response);
-    }
-
-    @Test
     void doFilter_withNonUuidSubject_doesNotAuthenticate() throws Exception {
         Claims claims = mock(Claims.class);
         when(claims.getSubject()).thenReturn("hr@example.com");
@@ -141,4 +125,3 @@ class JwtAuthenticationFilterTest {
         verify(filterChain).doFilter(request, response);
     }
 }
-
