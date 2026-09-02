@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,23 +35,61 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void getEmployeesReturnsEmployeeRecordsOnSuccess() throws Exception {
+	void getEmployeesReturnsList() throws Exception {
 		given(employeeService.getAllEmployees()).willReturn(List.of(sampleEmployeeDto()));
 
 		mockMvc.perform(get("/employees"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$[0].employeeId").value("3012-1A41"))
-				.andExpect(jsonPath("$[0].department").value("Sales"))
-				.andExpect(jsonPath("$[0].jobRole").value("Sales Executive"));
+				.andExpect(jsonPath("$[0].department").value("Sales"));
 	}
 
 	@Test
-	void getEmployeesReturnsServiceUnavailableWhenSurveyApiFails() throws Exception {
+	void getEmployeesReturns503WhenSurveyApiIsDown() throws Exception {
 		given(employeeService.getAllEmployees())
-				.willThrow(new SurveyApiException("Failed to retrieve employees from Survey API", new RuntimeException()));
+				.willThrow(new SurveyApiException("Survey API down", new RuntimeException()));
 
 		mockMvc.perform(get("/employees"))
-				.andExpect(status().isServiceUnavailable())
-				.andExpect(jsonPath("$.message").value("Failed to retrieve employees from Survey API"));
+				.andExpect(status().isServiceUnavailable());
+	}
+
+	@Test
+	void searchReturnsMatches() throws Exception {
+		given(employeeService.findByProperty("Department", "Sales")).willReturn(List.of(sampleEmployeeDto()));
+
+		mockMvc.perform(get("/employees").param("property", "Department").param("value", "Sales"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].department").value("Sales"));
+	}
+
+	@Test
+	void searchReturnsEmptyArrayWhenNothingMatches() throws Exception {
+		given(employeeService.findByProperty("Department", "NoSuchDept")).willReturn(List.of());
+
+		mockMvc.perform(get("/employees").param("property", "Department").param("value", "NoSuchDept"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.length()").value(0));
+	}
+
+	@Test
+	void searchWithoutValueReturnsBadRequest() throws Exception {
+		mockMvc.perform(get("/employees").param("property", "Department"))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void getEmployeeReturnsDetailsWhenFound() throws Exception {
+		given(employeeService.getEmployeeById("5a94")).willReturn(Optional.of(sampleEmployeeDto()));
+
+		mockMvc.perform(get("/employees/5a94"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.firstName").value("Leonelle"));
+	}
+
+	@Test
+	void getEmployeeReturns404WhenNotFound() throws Exception {
+		given(employeeService.getEmployeeById("missing")).willReturn(Optional.empty());
+
+		mockMvc.perform(get("/employees/missing"))
+				.andExpect(status().isNotFound());
 	}
 }

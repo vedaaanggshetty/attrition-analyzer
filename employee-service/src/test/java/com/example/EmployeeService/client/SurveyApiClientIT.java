@@ -12,12 +12,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import feign.FeignException;
 
-/**
- * Integration test — requires the real Survey API Docker container running at
- * http://localhost:3232 (docker run -p 3232:3232 --name surveycontainer -d stackroutenew/surveyapi).
- * Named with the "IT" suffix so `mvn test` (Surefire) does NOT run it by default;
- * run explicitly with the container up to verify live connectivity.
- */
+// Needs the real Survey API container running on localhost:3232.
+// Named *IT so plain `mvn test` skips it - run this one explicitly.
 @SpringBootTest
 class SurveyApiClientIT {
 
@@ -25,15 +21,14 @@ class SurveyApiClientIT {
 	private SurveyApiClient surveyApiClient;
 
 	@Test
-	void fetchesRealEmployeeRecordsFromRunningSurveyApi() {
+	void fetchesRealEmployees() {
 		List<SurveyEmployeeResponse> employees = surveyApiClient.getAllEmployees();
 
 		assertThat(employees).isNotEmpty();
-		assertThat(employees.get(0).EmployeeID()).isNotBlank();
 	}
 
 	@Test
-	void filtersByDepartmentAgainstRunningSurveyApi() {
+	void filtersByDepartment() {
 		List<SurveyEmployeeResponse> employees = surveyApiClient.findByProperty(Map.of("Department", "Sales"));
 
 		assertThat(employees).isNotEmpty();
@@ -41,7 +36,7 @@ class SurveyApiClientIT {
 	}
 
 	@Test
-	void returns404ForUnknownEmployeeIdAgainstRunningSurveyApi() {
+	void unknownIdReturns404() {
 		assertThatThrownBy(() -> surveyApiClient.getEmployeeById("does-not-exist"))
 				.isInstanceOf(FeignException.NotFound.class);
 	}

@@ -1,4 +1,5 @@
 services:
+
   mysql:
     image: mysql:8.4
     container_name: attrition-mysql
@@ -21,6 +22,92 @@ services:
       retries: 5
       start_period: 30s
 
+  discovery-service:
+    build:
+      context: ./discovery-service
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    networks:
+      - attrition-net
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      JAVA_OPTS: "-Deureka.client.service-url.defaultZone=http://discovery-service:8761/eureka/"
+    depends_on:
+      - discovery-service
+    networks:
+      - attrition-net
+
+  employee-service:
+    build:
+      context: ./employee-service
+    container_name: employee-service
+    ports:
+      - "8083:8083"
+    environment:
+      JAVA_OPTS: >-
+        -Deureka.client.service-url.defaultZone=http://discovery-service:8761/eureka/
+        -Dsurvey-api.base-url=http://host.docker.internal:3232
+    depends_on:
+      - discovery-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - attrition-net
+
+  notification-db:
+    image: mysql:8.0
+    container_name: notification-db
+    environment:
+      MYSQL_DATABASE: notification_db
+      MYSQL_ROOT_PASSWORD: ${NOTIFICATION_DB_ROOT_PASSWORD}
+      MYSQL_USER: ${NOTIFICATION_DB_USERNAME}
+      MYSQL_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - notification-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${NOTIFICATION_DB_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - attrition-net
+
+  notification-service:
+    build:
+      context: ./notification-service
+    container_name: notification-service
+    ports:
+      - "8084:8084"
+    environment:
+      JAVA_OPTS: >-
+        -Deureka.client.service-url.defaultZone=http://discovery-service:8761/eureka/
+        -Dspring.datasource.url=jdbc:mysql://notification-db:3306/notification_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+        -Dspring.datasource.username=${NOTIFICATION_DB_USERNAME}
+        -Dspring.datasource.password=${NOTIFICATION_DB_PASSWORD}
+        -Djwt.secret=${JWT_SECRET}
+    depends_on:
+      discovery-service:
+        condition: service_started
+      notification-db:
+        condition: service_healthy
+    networks:
+      - attrition-net
+
+networks:
+  attrition-net:
+    driver: bridge
+
 volumes:
   mysql_data:
     name: attrition_mysql_data
+
+  notification-db-data:
