@@ -3,6 +3,7 @@ package com.example.APIGateway.security;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -44,6 +45,10 @@ public class SecurityConfig {
                         .requestMatchers("/users/register").permitAll()
                         .requestMatchers("/auth/reset-password/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+                        // US-21: Guests may view attrition analysis without logging in, but
+                        // never individual employee records/search (/employees, /employees/{id})
+                        // and never HR-only features (notifications) - those stay authenticated.
+                        .requestMatchers(HttpMethod.GET, "/employees/analysis/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

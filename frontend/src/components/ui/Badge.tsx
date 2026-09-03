@@ -8,6 +8,12 @@ const RISK_STYLES: Record<AttritionRisk, string> = {
   High: "bg-red-100 text-red-700",
 };
 
+const RISK_DOT_STYLES: Record<AttritionRisk, string> = {
+  Low: "bg-brand-500",
+  Medium: "bg-amber-500",
+  High: "bg-red-500",
+};
+
 export function Badge({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
@@ -21,5 +27,10 @@ export function Badge({ className, ...props }: HTMLAttributes<HTMLSpanElement>) 
 }
 
 export function RiskBadge({ risk }: { risk: AttritionRisk }) {
-  return <Badge className={RISK_STYLES[risk]}>{risk} risk</Badge>;
+  return (
+    <Badge className={cx("gap-1.5", RISK_STYLES[risk])}>
+      <span className={cx("h-1.5 w-1.5 rounded-full", RISK_DOT_STYLES[risk])} />
+      {risk} risk
+    </Badge>
+  );
 }

@@ -2,9 +2,15 @@ import { Link } from "react-router-dom";
 import { Button } from "../ui/Button";
 import { useReveal } from "../../hooks/useReveal";
 import { useParallax } from "../../hooks/useParallax";
+import { useAuth } from "../../context/AuthContext";
 
 export function Hero() {
   const ref = useReveal<HTMLDivElement>(120);
+  const { isAuthenticated } = useAuth();
+  // Guests aren't logged in, so "View Analytics" can't send them to the
+  // protected dashboard (US-21) - it sends them to the guest-visible
+  // analytics section on this same page instead.
+  const analyticsHref = isAuthenticated ? "/dashboard" : "/#analytics";
 
   return (
     <section className="relative overflow-hidden pb-24 pt-40 lg:pb-32 lg:pt-48">
@@ -36,7 +42,7 @@ export function Hero() {
           <Link to="/register">
             <Button size="lg">Get Started</Button>
           </Link>
-          <Link to="/dashboard">
+          <Link to={analyticsHref}>
             <Button variant="secondary" size="lg">
               View Analytics
             </Button>

@@ -1,19 +1,31 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { cx } from "../../lib/utils";
+import { useAuth } from "../../context/AuthContext";
 import { Button } from "../ui/Button";
 import { Wordmark } from "../ui/Wordmark";
-
-const LINKS = [
-  { label: "Home", to: "/" },
-  { label: "Analytics", to: "/dashboard" },
-  { label: "Employees", to: "/employees" },
-  { label: "About", to: "/about" },
-];
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  // Guests aren't logged in, so "Analytics" can't point at the protected
+  // dashboard (US-21) - it points at the guest-visible analytics section
+  // on the landing page instead.
+  const LINKS = [
+    { label: "Home", to: "/" },
+    { label: "Analytics", to: isAuthenticated ? "/dashboard" : "/#analytics" },
+    { label: "Employees", to: "/employees" },
+    { label: "About", to: "/about" },
+  ];
+
+  function handleLogout() {
+    setMenuOpen(false);
+    logout();
+    navigate("/", { replace: true });
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -70,16 +82,31 @@ export function Navbar() {
           </div>
 
           <div className="hidden items-center gap-2 md:flex">
-            <Link to="/login">
-              <Button variant="ghost" size="sm">
-                Log in
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button variant="primary" size="sm">
-                Get Started
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link to="/dashboard">
+                  <Button variant="ghost" size="sm">
+                    Dashboard
+                  </Button>
+                </Link>
+                <Button variant="primary" size="sm" onClick={handleLogout}>
+                  Log out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">
+                    Log in
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button variant="primary" size="sm">
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           <button
@@ -145,16 +172,35 @@ export function Navbar() {
           ))}
         </nav>
         <div className="mt-10 flex flex-col gap-3">
-          <Link to="/login" onClick={() => setMenuOpen(false)}>
-            <Button variant="secondary" className="w-full !border-white/25 !bg-transparent !text-white">
-              Log in
-            </Button>
-          </Link>
-          <Link to="/register" onClick={() => setMenuOpen(false)}>
-            <Button variant="primary" className="w-full !bg-white !text-brand-900 hover:!bg-white/90">
-              Get Started
-            </Button>
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <Link to="/dashboard" onClick={() => setMenuOpen(false)}>
+                <Button variant="secondary" className="w-full !border-white/25 !bg-transparent !text-white">
+                  Dashboard
+                </Button>
+              </Link>
+              <Button
+                variant="primary"
+                className="w-full !bg-white !text-brand-900 hover:!bg-white/90"
+                onClick={handleLogout}
+              >
+                Log out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" onClick={() => setMenuOpen(false)}>
+                <Button variant="secondary" className="w-full !border-white/25 !bg-transparent !text-white">
+                  Log in
+                </Button>
+              </Link>
+              <Link to="/register" onClick={() => setMenuOpen(false)}>
+                <Button variant="primary" className="w-full !bg-white !text-brand-900 hover:!bg-white/90">
+                  Get Started
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </>

@@ -14,7 +14,7 @@ interface Errors {
 export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, sessionExpired } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Errors>({});
@@ -80,6 +80,11 @@ export function Login() {
           autoComplete="current-password"
         />
 
+        {!formError && sessionExpired && (
+          <p role="alert" className="rounded-xl bg-brand-50 px-4 py-3 text-sm font-medium text-brand-900">
+            Your session expired. Log in again to continue.
+          </p>
+        )}
         {formError && (
           <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
             {formError}

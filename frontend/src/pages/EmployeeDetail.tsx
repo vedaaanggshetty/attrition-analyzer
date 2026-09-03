@@ -1,26 +1,68 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { employees, notifications as seedNotifications } from "../data/mockData";
+import { getEmployeeById, flagEmployee, type Employee } from "../lib/employeeApi";
+import { getMyNotifications, type Notification } from "../lib/notificationApi";
+import { attritionRisk, avatarColorFor } from "../lib/employeeDisplay";
+import { useAuth } from "../context/AuthContext";
+import { ApiError } from "../lib/apiClient";
 import { formatCurrency, formatDate, formatRelativeTime } from "../lib/utils";
 import { Card } from "../components/ui/Card";
 import { Avatar } from "../components/ui/Avatar";
 import { RiskBadge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
-import type { FlaggedNotification } from "../types";
+import { Skeleton } from "../components/ui/Skeleton";
 
 export function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
-  const employee = useMemo(() => employees.find((e) => e.id === id), [id]);
+  const { user } = useAuth();
 
-  const [notes, setNotes] = useState<FlaggedNotification[]>(() =>
-    seedNotifications.filter((n) => n.employeeId === employee?.employeeId)
-  );
+  const [employee, setEmployee] = useState<Employee | null | undefined>(undefined);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Notification[]>([]);
+
   const [comment, setComment] = useState("");
   const [flagging, setFlagging] = useState(false);
   const [flagged, setFlagged] = useState(false);
+  const [flagError, setFlagError] = useState<string | null>(null);
 
-  if (!employee) {
+  useEffect(() => {
+    if (!id) return;
+    setEmployee(undefined);
+    getEmployeeById(id)
+      .then(setEmployee)
+      .catch((err) => setLoadError(err instanceof ApiError ? err.message : "Couldn't load this employee."));
+  }, [id]);
+
+  useEffect(() => {
+    if (!employee) return;
+    getMyNotifications()
+      .then((all) => setNotes(all.filter((n) => n.employeeId === employee.employeeId)))
+      .catch(() => {
+        // Notes are a secondary detail on this page; a failed fetch here
+        // just leaves the thread empty rather than blocking the whole view.
+      });
+  }, [employee]);
+
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-3xl py-16">
+        <EmptyState
+          title="Couldn't load this employee"
+          description={loadError}
+          action={
+            <Link to="/employees">
+              <Button variant="secondary" size="sm">
+                Back to Employees
+              </Button>
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
+
+  if (employee === null) {
     return (
       <div className="mx-auto max-w-3xl py-16">
         <EmptyState
@@ -38,12 +80,29 @@ export function EmployeeDetail() {
     );
   }
 
-  function handleFlag(e: React.FormEvent) {
+  if (employee === undefined) {
+    return (
+      <div className="mx-auto max-w-5xl">
+        <Card className="p-6 sm:p-8">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  async function handleFlag(e: React.FormEvent) {
     e.preventDefault();
     if (!comment.trim() || !employee) return;
     setFlagging(true);
-    // UI-only mock submission; wire this to POST /employees/{id}/flag later.
-    window.setTimeout(() => {
+    setFlagError(null);
+    try {
+      await flagEmployee(employee.id, comment.trim());
       setNotes((prev) => [
         {
           id: Date.now(),
@@ -52,15 +111,17 @@ export function EmployeeDetail() {
           department: employee.department,
           comment: comment.trim(),
           createdAt: new Date().toISOString(),
-          hrUserEmail: "you@attritionanalyzer.com",
         },
         ...prev,
       ]);
       setComment("");
-      setFlagging(false);
       setFlagged(true);
       window.setTimeout(() => setFlagged(false), 2500);
-    }, 600);
+    } catch (err) {
+      setFlagError(err instanceof ApiError ? err.message : "Couldn't flag this employee. Try again.");
+    } finally {
+      setFlagging(false);
+    }
   }
 
   return (
@@ -72,7 +133,7 @@ export function EmployeeDetail() {
       <Card className="p-6 sm:p-8">
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <Avatar firstName={employee.firstName} lastName={employee.lastName} color={employee.avatarColor} size="lg" />
+            <Avatar firstName={employee.firstName} lastName={employee.lastName} color={avatarColorFor(employee.id)} size="lg" />
             <div>
               <h1 className="font-display text-2xl font-semibold tracking-tight text-brand-900 sm:text-3xl">
                 {employee.firstName} {employee.lastName}
@@ -83,7 +144,7 @@ export function EmployeeDetail() {
               <p className="mt-1 text-xs text-neutral-400">ID {employee.employeeId}</p>
             </div>
           </div>
-          <RiskBadge risk={employee.attritionRisk} />
+          <RiskBadge risk={attritionRisk(employee)} />
         </div>
 
         <div className="mt-8 grid grid-cols-2 gap-5 border-t border-brand-900/8 pt-6 sm:grid-cols-4">
@@ -120,6 +181,7 @@ export function EmployeeDetail() {
           </Button>
         </form>
         {flagged && <p className="mt-3 text-sm font-medium text-emerald-600">Employee flagged.</p>}
+        {flagError && <p className="mt-3 text-sm font-medium text-red-600">{flagError}</p>}
 
         <div className="mt-6 flex flex-col divide-y divide-brand-900/8 border-t border-brand-900/8">
           {notes.length === 0 ? (
@@ -130,7 +192,7 @@ export function EmployeeDetail() {
                 <Avatar firstName={note.employeeName.split(" ")[0]} lastName={note.employeeName.split(" ")[1] ?? ""} size="sm" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                    <p className="text-sm font-semibold text-brand-900">{note.hrUserEmail}</p>
+                    <p className="text-sm font-semibold text-brand-900">{user?.email ?? "You"}</p>
                     <span className="text-xs text-neutral-400">{formatRelativeTime(note.createdAt)}</span>
                   </div>
                   <p className="mt-1 text-sm text-neutral-600">{note.comment}</p>

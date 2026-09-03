@@ -17,6 +17,10 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_STORAGE_KEY);
 }
 
+/** AuthContext listens for this to end the session (US-05: expired/invalid
+ * token on any protected request logs the user out, not just page load). */
+export const SESSION_EXPIRED_EVENT = "attritionAnalyzer:sessionExpired";
+
 export class ApiError extends Error {
   status: number;
 
@@ -68,6 +72,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   if (!response.ok) {
     const message = (data && typeof data.message === "string" && data.message) || "Something went wrong.";
+    if (response.status === 401 && authenticated) {
+      window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+    }
     throw new ApiError(response.status, message);
   }
 
