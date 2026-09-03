@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Inter Tight", system-ui, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, serif;
+
+  /* https://colorhunt.co/palette/e3f2fd90caf92196f30d47a1 */
+  --color-brand-50: #e3f2fd;
+  --color-brand-300: #90caf9;
+  --color-brand-500: #2196f3;
+  --color-brand-900: #0d47a1;
+}
+
+:root {
+  --muted: #5b6b82;
+  --border-soft: rgba(13, 71, 161, 0.1);
+  --accent-live: #2196f3;
+}
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-white text-[#0d1b2e] font-sans antialiased;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    @apply bg-brand-900 text-white;
+  }
+}
+
+@layer utilities {
+  /* Staggered IntersectionObserver reveal: elements start here, .reveal-visible removes it */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Reveal variant with a little scale-pop, for standalone hero statistics */
+  .reveal-pop {
+    opacity: 0;
+    transform: translateY(16px) scale(0.94);
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal-pop.reveal-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .marquee-track {
+    animation: marquee-left 26s linear infinite;
+  }
+
+  .marquee-mask {
+    mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
+  }
+
+  .line-pulse {
+    animation: line-pulse 5s ease-in-out infinite;
+  }
+
+  /* Continuous, slow keyframe drift for ambient background blobs - independent
+     of scroll position, layered on top of scroll-parallax where both are used. */
+  .animate-drift {
+    animation: drift 14s ease-in-out infinite;
+  }
+
+  .animate-drift-slow {
+    animation: drift 22s ease-in-out infinite reverse;
+  }
+
+  /* Gentle continuous bob for small decorative marks (icons, dots) */
+  .animate-bob {
+    animation: bob 4s ease-in-out infinite;
+  }
+}
+
+@keyframes marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes line-pulse {
+  0% {
+    opacity: 0;
+    transform: scaleY(1);
+  }
+  15% {
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 0;
+    transform: scaleY(0.85);
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(3%, -4%) scale(1.05);
+  }
+  66% {
+    transform: translate(-2%, 3%) scale(0.98);
+  }
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
