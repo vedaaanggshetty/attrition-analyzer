@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.example.NotificationService.dto.CreateNotificationRequest;
 import com.example.NotificationService.dto.NotificationDto;
 import com.example.NotificationService.entity.Notification;
+import com.example.NotificationService.event.EmployeeFlaggedEvent;
 import com.example.NotificationService.exception.NotificationNotFoundException;
 import com.example.NotificationService.repository.NotificationRepository;
 
@@ -29,6 +30,27 @@ public class NotificationService {
                 request.comment());
         notification = notificationRepository.save(notification);
         return toDto(notification);
+    }
+
+    /**
+     * Creates a Notification from a consumed EmployeeFlaggedEvent. Returns
+     * false (no-op) if a notification for this eventId already exists, so the
+     * listener can tell duplicate deliveries apart from new ones.
+     */
+    public boolean createFromEvent(EmployeeFlaggedEvent event) {
+        if (notificationRepository.existsByEventId(event.eventId())) {
+            return false;
+        }
+
+        Notification notification = new Notification(
+                event.employeeId(),
+                event.employeeName(),
+                event.department(),
+                event.hrUserEmail(),
+                event.comment(),
+                event.eventId());
+        notificationRepository.save(notification);
+        return true;
     }
 
     public List<NotificationDto> getNotificationsForUser(String hrUserEmail) {

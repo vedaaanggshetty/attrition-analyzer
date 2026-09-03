@@ -1,10 +1,12 @@
 package com.example.EmployeeService.service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -16,6 +18,8 @@ import feign.FeignException;
 import com.example.EmployeeService.client.SurveyApiClient;
 import com.example.EmployeeService.dto.AttritionAnalysisDto;
 import com.example.EmployeeService.dto.EmployeeDto;
+import com.example.EmployeeService.event.EmployeeFlaggedEvent;
+import com.example.EmployeeService.event.EmployeeFlaggedEventProducer;
 import com.example.EmployeeService.exception.SurveyApiException;
 import com.example.EmployeeService.mapper.EmployeeMapper;
 
@@ -23,9 +27,11 @@ import com.example.EmployeeService.mapper.EmployeeMapper;
 public class EmployeeService {
 
 	private final SurveyApiClient surveyApiClient;
+	private final EmployeeFlaggedEventProducer eventProducer;
 
-	public EmployeeService(SurveyApiClient surveyApiClient) {
+	public EmployeeService(SurveyApiClient surveyApiClient, EmployeeFlaggedEventProducer eventProducer) {
 		this.surveyApiClient = surveyApiClient;
+		this.eventProducer = eventProducer;
 	}
 
 	public List<EmployeeDto> getAllEmployees() {
@@ -56,6 +62,32 @@ public class EmployeeService {
 		} catch (FeignException ex) {
 			throw new SurveyApiException("Failed to retrieve employee " + id + " from Survey API", ex);
 		}
+	}
+
+	/**
+	 * Looks up the employee (reusing the existing Survey API lookup/mapping),
+	 * then publishes an {@link EmployeeFlaggedEvent} for Notification Service
+	 * to consume. Returns empty if the employee doesn't exist, same contract
+	 * as {@link #getEmployeeById(String)}.
+	 */
+	public Optional<EmployeeFlaggedEvent> flagEmployee(String id, String comment, String hrUserEmail) {
+		Optional<EmployeeDto> employee = getEmployeeById(id);
+		if (employee.isEmpty()) {
+			return Optional.empty();
+		}
+
+		EmployeeDto dto = employee.get();
+		EmployeeFlaggedEvent event = new EmployeeFlaggedEvent(
+				UUID.randomUUID(),
+				dto.employeeId(),
+				dto.firstName() + " " + dto.lastName(),
+				dto.department(),
+				comment,
+				hrUserEmail,
+				Instant.now());
+
+		eventProducer.publish(event);
+		return Optional.of(event);
 	}
 
 	public List<AttritionAnalysisDto> getAttritionByDepartment() {

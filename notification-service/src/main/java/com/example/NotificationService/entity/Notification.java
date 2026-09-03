@@ -1,8 +1,11 @@
 package com.example.NotificationService.entity;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,6 +47,13 @@ public class Notification {
     @Column(nullable = false, length = 1000)
     private String comment;
 
+    // Idempotency key for notifications created from a Kafka EmployeeFlaggedEvent.
+    // Null for notifications created via the direct POST /notifications flow,
+    // which has no event to dedupe against.
+    @Column(name = "event_id", unique = true, columnDefinition = "CHAR(36)")
+    @JdbcTypeCode(SqlTypes.CHAR)
+    private UUID eventId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -54,11 +64,17 @@ public class Notification {
 
     public Notification(String employeeId, String employeeName, String department, String hrUserEmail,
             String comment) {
+        this(employeeId, employeeName, department, hrUserEmail, comment, null);
+    }
+
+    public Notification(String employeeId, String employeeName, String department, String hrUserEmail,
+            String comment, UUID eventId) {
         this.employeeId = employeeId;
         this.employeeName = employeeName;
         this.department = department;
         this.hrUserEmail = hrUserEmail;
         this.comment = comment;
+        this.eventId = eventId;
     }
 
     public Long getId() {
@@ -83,6 +99,10 @@ public class Notification {
 
     public String getComment() {
         return comment;
+    }
+
+    public UUID getEventId() {
+        return eventId;
     }
 
     public Instant getCreatedAt() {
