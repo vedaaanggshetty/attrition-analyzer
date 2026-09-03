@@ -115,4 +115,54 @@ class EmployeeControllerTest {
 		mockMvc.perform(get("/employees/analysis/department"))
 				.andExpect(status().isServiceUnavailable());
 	}
+
+	@Test
+	void getAttritionByJobRoleReturnsAggregatedResults() throws Exception {
+		given(employeeService.getAttritionByJobRole()).willReturn(List.of(
+				new AttritionAnalysisDto("Sales Executive", 2, 1, 50.0)));
+
+		mockMvc.perform(get("/employees/analysis/job-role"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].groupLabel").value("Sales Executive"));
+	}
+
+	@Test
+	void getAttritionByCompensationReturnsAggregatedResults() throws Exception {
+		given(employeeService.getAttritionByCompensation()).willReturn(List.of(
+				new AttritionAnalysisDto("$50000-$99999", 3, 1, 33.33)));
+
+		mockMvc.perform(get("/employees/analysis/compensation"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].groupLabel").value("$50000-$99999"));
+	}
+
+	@Test
+	void getAttritionByDemographicsReturnsAggregatedResults() throws Exception {
+		given(employeeService.getAttritionByDemographics()).willReturn(List.of(
+				new AttritionAnalysisDto("Female", 5, 1, 20.0)));
+
+		mockMvc.perform(get("/employees/analysis/demographics"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].groupLabel").value("Female"));
+	}
+
+	@Test
+	void getAttritionByWorkLifeBalanceReturnsAggregatedResults() throws Exception {
+		given(employeeService.getAttritionByWorkLifeBalance()).willReturn(List.of(
+				new AttritionAnalysisDto("Yes", 2, 2, 100.0)));
+
+		mockMvc.perform(get("/employees/analysis/work-life-balance"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].groupLabel").value("Yes"));
+	}
+
+	@Test
+	void getAttritionByCareerProgressionReturnsAggregatedResults() throws Exception {
+		given(employeeService.getAttritionByCareerProgression()).willReturn(List.of(
+				new AttritionAnalysisDto("0-2 years", 1, 0, 0.0)));
+
+		mockMvc.perform(get("/employees/analysis/career-progression"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].groupLabel").value("0-2 years"));
+	}
 }

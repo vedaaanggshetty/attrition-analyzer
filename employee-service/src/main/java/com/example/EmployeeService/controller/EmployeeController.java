@@ -55,4 +55,29 @@ public class EmployeeController {
 	public List<AttritionAnalysisDto> getAttritionByDepartment() {
 		return employeeService.getAttritionByDepartment();
 	}
+
+	@GetMapping("/employees/analysis/job-role")
+	public List<AttritionAnalysisDto> getAttritionByJobRole() {
+		return employeeService.getAttritionByJobRole();
+	}
+
+	@GetMapping("/employees/analysis/compensation")
+	public List<AttritionAnalysisDto> getAttritionByCompensation() {
+		return employeeService.getAttritionByCompensation();
+	}
+
+	@GetMapping("/employees/analysis/demographics")
+	public List<AttritionAnalysisDto> getAttritionByDemographics() {
+		return employeeService.getAttritionByDemographics();
+	}
+
+	@GetMapping("/employees/analysis/work-life-balance")
+	public List<AttritionAnalysisDto> getAttritionByWorkLifeBalance() {
+		return employeeService.getAttritionByWorkLifeBalance();
+	}
+
+	@GetMapping("/employees/analysis/career-progression")
+	public List<AttritionAnalysisDto> getAttritionByCareerProgression() {
+		return employeeService.getAttritionByCareerProgression();
+	}
 }

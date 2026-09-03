@@ -59,6 +59,14 @@ class EmployeeServiceTest {
 				"No", "2012-01-03", attrition, 10, 4, 9, 7, "5a94");
 	}
 
+	private static SurveyEmployeeResponse response(String jobRole, String gender, Integer salary,
+			String overTime, Integer yearsSincePromotion, String attrition) {
+		return new SurveyEmployeeResponse(
+				"3012-1A41", "Leonelle", "Simco", gender, 30, "Some Travel", "Sales", 27,
+				"IL", "White", 5, "Marketing", jobRole, "Divorced", salary, 1,
+				overTime, "2012-01-03", attrition, 10, 4, yearsSincePromotion, 7, "5a94");
+	}
+
 	@Test
 	void getAllEmployeesReturnsMappedList() {
 		given(surveyApiClient.getAllEmployees()).willReturn(List.of(sampleResponse()));
@@ -143,5 +151,112 @@ class EmployeeServiceTest {
 
 		assertThatThrownBy(() -> employeeService.getAttritionByDepartment())
 				.isInstanceOf(SurveyApiException.class);
+	}
+
+	@Test
+	void getAttritionByJobRoleGroupsCorrectly() {
+		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
+				response("Sales Executive", "Female", 100000, "No", 1, "Yes"),
+				response("Sales Executive", "Male", 100000, "No", 1, "No"),
+				response("HR Business Partner", "Female", 90000, "No", 1, "No")));
+
+		List<AttritionAnalysisDto> result = employeeService.getAttritionByJobRole();
+
+		assertThat(result).hasSize(2);
+		AttritionAnalysisDto hr = result.get(0);
+		assertThat(hr.groupLabel()).isEqualTo("HR Business Partner");
+		assertThat(hr.totalEmployees()).isEqualTo(1);
+		assertThat(hr.attritionCount()).isEqualTo(0);
+		AttritionAnalysisDto sales = result.get(1);
+		assertThat(sales.groupLabel()).isEqualTo("Sales Executive");
+		assertThat(sales.totalEmployees()).isEqualTo(2);
+		assertThat(sales.attritionCount()).isEqualTo(1);
+		assertThat(sales.attritionRate()).isEqualTo(50.0);
+	}
+
+	@Test
+	void getAttritionByCompensationBucketsSalaryIntoFiftyThousandBands() {
+		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
+				response("Sales Executive", "Female", 40000, "No", 1, "Yes"),
+				response("Sales Executive", "Male", 45000, "No", 1, "No"),
+				response("Sales Executive", "Male", 120000, "No", 1, "No")));
+
+		List<AttritionAnalysisDto> result = employeeService.getAttritionByCompensation();
+
+		assertThat(result).hasSize(2);
+		assertThat(result.get(0).groupLabel()).isEqualTo("$0-$49999");
+		assertThat(result.get(0).totalEmployees()).isEqualTo(2);
+		assertThat(result.get(0).attritionCount()).isEqualTo(1);
+		assertThat(result.get(1).groupLabel()).isEqualTo("$100000-$149999");
+		assertThat(result.get(1).totalEmployees()).isEqualTo(1);
+	}
+
+	@Test
+	void getAttritionByCompensationTreatsNullSalaryAsUnknown() {
+		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
+				response("Sales Executive", "Female", null, "No", 1, "No")));
+
+		List<AttritionAnalysisDto> result = employeeService.getAttritionByCompensation();
+
+		assertThat(result).hasSize(1);
+		assertThat(result.get(0).groupLabel()).isEqualTo("Unknown");
+	}
+
+	@Test
+	void getAttritionByDemographicsGroupsByGender() {
+		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
+				response("Sales Executive", "Female", 100000, "No", 1, "Yes"),
+				response("Sales Executive", "Male", 100000, "No", 1, "No")));
+
+		List<AttritionAnalysisDto> result = employeeService.getAttritionByDemographics();
+
+		assertThat(result).hasSize(2);
+		assertThat(result.get(0).groupLabel()).isEqualTo("Female");
+		assertThat(result.get(1).groupLabel()).isEqualTo("Male");
+	}
+
+	@Test
+	void getAttritionByWorkLifeBalanceGroupsByOverTime() {
+		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
+				response("Sales Executive", "Female", 100000, "Yes", 1, "Yes"),
+				response("Sales Executive", "Male", 100000, "Yes", 1, "Yes"),
+				response("Sales Executive", "Male", 100000, "No", 1, "No")));
+
+		List<AttritionAnalysisDto> result = employeeService.getAttritionByWorkLifeBalance();
+
+		assertThat(result).hasSize(2);
+		assertThat(result.get(0).groupLabel()).isEqualTo("No");
+		assertThat(result.get(0).attritionCount()).isEqualTo(0);
+		assertThat(result.get(1).groupLabel()).isEqualTo("Yes");
+		assertThat(result.get(1).totalEmployees()).isEqualTo(2);
+		assertThat(result.get(1).attritionCount()).isEqualTo(2);
+		assertThat(result.get(1).attritionRate()).isEqualTo(100.0);
+	}
+
+	@Test
+	void getAttritionByCareerProgressionBucketsYearsSincePromotion() {
+		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
+				response("Sales Executive", "Female", 100000, "No", 1, "No"),
+				response("Sales Executive", "Male", 100000, "No", 4, "No"),
+				response("Sales Executive", "Male", 100000, "No", 8, "Yes")));
+
+		List<AttritionAnalysisDto> result = employeeService.getAttritionByCareerProgression();
+
+		assertThat(result).hasSize(3);
+		assertThat(result.get(0).groupLabel()).isEqualTo("0-2 years");
+		assertThat(result.get(1).groupLabel()).isEqualTo("3-5 years");
+		assertThat(result.get(2).groupLabel()).isEqualTo("6+ years");
+		assertThat(result.get(2).attritionCount()).isEqualTo(1);
+	}
+
+	@Test
+	void getAttritionByCareerProgressionTreatsNullYearsAsUnknown() {
+		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
+				response("Sales Executive", "Female", 100000, "No", null, "No")));
+
+		List<AttritionAnalysisDto> result = employeeService.getAttritionByCareerProgression();
+
+		assertThat(result).hasSize(1);
+		assertThat(result.get(0).groupLabel()).isEqualTo("Unknown");
 	}
 }

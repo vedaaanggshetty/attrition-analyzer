@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -58,16 +59,51 @@ public class EmployeeService {
 	}
 
 	public List<AttritionAnalysisDto> getAttritionByDepartment() {
+		return aggregateAttritionBy(this::departmentOrUnknown);
+	}
+
+	public List<AttritionAnalysisDto> getAttritionByJobRole() {
+		return aggregateAttritionBy(this::jobRoleOrUnknown);
+	}
+
+	// "Compensation" isn't defined further in the backlog. Salary is the obvious field;
+	// it's bucketed into $50,000 bands since raw salary is continuous. Band width is an
+	// engineering decision, not a documented requirement.
+	public List<AttritionAnalysisDto> getAttritionByCompensation() {
+		return aggregateAttritionBy(this::salaryBand);
+	}
+
+	// "Demographics" isn't tied to a specific field in the backlog. Gender is used here
+	// as the simplest, lowest-cardinality demographic breakdown - a judgment call, not a
+	// documented choice. Other fields (age, ethnicity, marital status, state) are equally
+	// plausible and were not selected.
+	public List<AttritionAnalysisDto> getAttritionByDemographics() {
+		return aggregateAttritionBy(this::genderOrUnknown);
+	}
+
+	// The story text explicitly names overtime as the work-life balance factor to use.
+	public List<AttritionAnalysisDto> getAttritionByWorkLifeBalance() {
+		return aggregateAttritionBy(this::overTimeOrUnknown);
+	}
+
+	// "Career progression" isn't tied to a specific field. Years since last promotion is
+	// used here as the closest match to "progression" among the available years-based
+	// fields - a judgment call, not a documented choice. Bucketed since it's continuous.
+	public List<AttritionAnalysisDto> getAttritionByCareerProgression() {
+		return aggregateAttritionBy(this::yearsSincePromotionBand);
+	}
+
+	private List<AttritionAnalysisDto> aggregateAttritionBy(Function<EmployeeDto, String> groupKeyExtractor) {
 		List<EmployeeDto> employees = getAllEmployees();
 
-		Map<String, List<EmployeeDto>> byDepartment = employees.stream()
+		Map<String, List<EmployeeDto>> grouped = employees.stream()
 				.collect(Collectors.groupingBy(
-						this::departmentOrUnknown,
+						groupKeyExtractor,
 						TreeMap::new,
 						Collectors.toList()));
 
 		List<AttritionAnalysisDto> result = new ArrayList<>();
-		for (Map.Entry<String, List<EmployeeDto>> entry : byDepartment.entrySet()) {
+		for (Map.Entry<String, List<EmployeeDto>> entry : grouped.entrySet()) {
 			result.add(toAttritionAnalysisDto(entry.getKey(), entry.getValue()));
 		}
 		return result;
@@ -75,6 +111,42 @@ public class EmployeeService {
 
 	private String departmentOrUnknown(EmployeeDto employee) {
 		return StringUtils.hasText(employee.department()) ? employee.department() : "Unknown";
+	}
+
+	private String jobRoleOrUnknown(EmployeeDto employee) {
+		return StringUtils.hasText(employee.jobRole()) ? employee.jobRole() : "Unknown";
+	}
+
+	private String genderOrUnknown(EmployeeDto employee) {
+		return StringUtils.hasText(employee.gender()) ? employee.gender() : "Unknown";
+	}
+
+	private String overTimeOrUnknown(EmployeeDto employee) {
+		return StringUtils.hasText(employee.overTime()) ? employee.overTime() : "Unknown";
+	}
+
+	private String salaryBand(EmployeeDto employee) {
+		Integer salary = employee.salary();
+		if (salary == null) {
+			return "Unknown";
+		}
+		int bandStart = (salary / 50000) * 50000;
+		int bandEnd = bandStart + 49999;
+		return "$" + bandStart + "-$" + bandEnd;
+	}
+
+	private String yearsSincePromotionBand(EmployeeDto employee) {
+		Integer years = employee.yearsSinceLastPromotion();
+		if (years == null) {
+			return "Unknown";
+		}
+		if (years <= 2) {
+			return "0-2 years";
+		}
+		if (years <= 5) {
+			return "3-5 years";
+		}
+		return "6+ years";
 	}
 
 	private AttritionAnalysisDto toAttritionAnalysisDto(String groupLabel, List<EmployeeDto> group) {
