@@ -7,8 +7,10 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.example.NotificationService.dto.CreateNotificationRequest;
 import com.example.NotificationService.dto.NotificationDto;
 import com.example.NotificationService.entity.Notification;
+import com.example.NotificationService.event.EmployeeFlaggedEvent;
 import com.example.NotificationService.exception.NotificationNotFoundException;
 import com.example.NotificationService.repository.NotificationRepository;
 
@@ -58,6 +61,37 @@ class NotificationServiceTest {
 
         assertThat(result.employeeName()).isEqualTo("Leonelle Simco");
         assertThat(result.comment()).isEqualTo("Flight risk, discuss retention");
+    }
+
+    @Test
+    void createFromEventSavesNotificationWithEventId() {
+        UUID eventId = UUID.randomUUID();
+        EmployeeFlaggedEvent event = new EmployeeFlaggedEvent(
+                eventId, "5a94", "Leonelle Simco", "Sales", "Flight risk", "hr@example.com", Instant.now());
+        given(notificationRepository.existsByEventId(eventId)).willReturn(false);
+        ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
+        given(notificationRepository.save(captor.capture())).willAnswer(invocation -> invocation.getArgument(0));
+
+        boolean created = notificationService.createFromEvent(event);
+
+        assertThat(created).isTrue();
+        Notification saved = captor.getValue();
+        assertThat(saved.getEventId()).isEqualTo(eventId);
+        assertThat(saved.getEmployeeName()).isEqualTo("Leonelle Simco");
+        assertThat(saved.getHrUserEmail()).isEqualTo("hr@example.com");
+    }
+
+    @Test
+    void createFromEventIsNoOpForDuplicateEventId() {
+        UUID eventId = UUID.randomUUID();
+        EmployeeFlaggedEvent event = new EmployeeFlaggedEvent(
+                eventId, "5a94", "Leonelle Simco", "Sales", "Flight risk", "hr@example.com", Instant.now());
+        given(notificationRepository.existsByEventId(eventId)).willReturn(true);
+
+        boolean created = notificationService.createFromEvent(event);
+
+        assertThat(created).isFalse();
+        verify(notificationRepository, never()).save(any());
     }
 
     @Test

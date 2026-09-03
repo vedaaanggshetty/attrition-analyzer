@@ -1,22 +1,29 @@
 package com.example.EmployeeService.controller;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.example.EmployeeService.dto.AttritionAnalysisDto;
 import com.example.EmployeeService.dto.EmployeeDto;
+import com.example.EmployeeService.event.EmployeeFlaggedEvent;
 import com.example.EmployeeService.exception.SurveyApiException;
+import com.example.EmployeeService.security.JwtService;
 import com.example.EmployeeService.service.EmployeeService;
 
 @WebMvcTest(EmployeeController.class)
@@ -27,6 +34,9 @@ class EmployeeControllerTest {
 
 	@MockitoBean
 	private EmployeeService employeeService;
+
+	@MockitoBean
+	private JwtService jwtService;
 
 	private static EmployeeDto sampleEmployeeDto() {
 		return new EmployeeDto(
@@ -92,6 +102,57 @@ class EmployeeControllerTest {
 
 		mockMvc.perform(get("/employees/missing"))
 				.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void flagEmployeeReturns202WhenFound() throws Exception {
+		given(jwtService.extractEmail("token")).willReturn("hr@example.com");
+		EmployeeFlaggedEvent event = new EmployeeFlaggedEvent(
+				UUID.randomUUID(), "3012-1A41", "Leonelle Simco", "Sales", "Watch closely",
+				"hr@example.com", Instant.now());
+		given(employeeService.flagEmployee("5a94", "Watch closely", "hr@example.com"))
+				.willReturn(Optional.of(event));
+
+		mockMvc.perform(post("/employees/5a94/flag")
+						.header("Authorization", "Bearer token")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{\"comment\":\"Watch closely\"}"))
+				.andExpect(status().isAccepted());
+	}
+
+	@Test
+	void flagEmployeeReturns404WhenNotFound() throws Exception {
+		given(jwtService.extractEmail("token")).willReturn("hr@example.com");
+		given(employeeService.flagEmployee("missing", "Watch closely", "hr@example.com"))
+				.willReturn(Optional.empty());
+
+		mockMvc.perform(post("/employees/missing/flag")
+						.header("Authorization", "Bearer token")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{\"comment\":\"Watch closely\"}"))
+				.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void flagEmployeeReturns401WhenNoAuthorizationHeader() throws Exception {
+		mockMvc.perform(post("/employees/5a94/flag")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{\"comment\":\"Watch closely\"}"))
+				.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void flagEmployeeReturns503WhenKafkaPublicationFails() throws Exception {
+		given(jwtService.extractEmail("token")).willReturn("hr@example.com");
+		given(employeeService.flagEmployee("5a94", "Watch closely", "hr@example.com"))
+				.willThrow(new com.example.EmployeeService.exception.EventPublicationException(
+						"Failed to publish EmployeeFlaggedEvent to Kafka", new RuntimeException()));
+
+		mockMvc.perform(post("/employees/5a94/flag")
+						.header("Authorization", "Bearer token")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{\"comment\":\"Watch closely\"}"))
+				.andExpect(status().isServiceUnavailable());
 	}
 
 	@Test

@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willThrow;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -24,6 +26,7 @@ import com.example.EmployeeService.client.SurveyApiClient;
 import com.example.EmployeeService.client.SurveyEmployeeResponse;
 import com.example.EmployeeService.dto.AttritionAnalysisDto;
 import com.example.EmployeeService.dto.EmployeeDto;
+import com.example.EmployeeService.event.EmployeeFlaggedEventProducer;
 import com.example.EmployeeService.exception.SurveyApiException;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,11 +35,14 @@ class EmployeeServiceTest {
 	@Mock
 	private SurveyApiClient surveyApiClient;
 
+	@Mock
+	private EmployeeFlaggedEventProducer eventProducer;
+
 	private EmployeeService employeeService;
 
 	@BeforeEach
 	void setUp() {
-		employeeService = new EmployeeService(surveyApiClient);
+		employeeService = new EmployeeService(surveyApiClient, eventProducer);
 	}
 
 	private static SurveyEmployeeResponse sampleResponse() {
@@ -99,6 +105,47 @@ class EmployeeServiceTest {
 
 		assertThatThrownBy(() -> employeeService.getAllEmployees())
 				.isInstanceOf(SurveyApiException.class);
+	}
+
+	@Test
+	void flagEmployeePublishesEventWithExpectedContents() {
+		given(surveyApiClient.getEmployeeById("5a94")).willReturn(sampleResponse());
+
+		Optional<com.example.EmployeeService.event.EmployeeFlaggedEvent> result =
+				employeeService.flagEmployee("5a94", "Watch closely", "hr@example.com");
+
+		assertThat(result).isPresent();
+		var event = result.get();
+		assertThat(event.eventId()).isNotNull();
+		assertThat(event.employeeId()).isEqualTo("3012-1A41");
+		assertThat(event.employeeName()).isEqualTo("Leonelle Simco");
+		assertThat(event.department()).isEqualTo("Sales");
+		assertThat(event.comment()).isEqualTo("Watch closely");
+		assertThat(event.hrUserEmail()).isEqualTo("hr@example.com");
+		assertThat(event.flaggedAt()).isNotNull();
+
+		then(eventProducer).should().publish(event);
+	}
+
+	@Test
+	void flagEmployeeReturnsEmptyWhenEmployeeNotFound() {
+		given(surveyApiClient.getEmployeeById("missing")).willThrow(feignError(404));
+
+		Optional<com.example.EmployeeService.event.EmployeeFlaggedEvent> result =
+				employeeService.flagEmployee("missing", "comment", "hr@example.com");
+
+		assertThat(result).isEmpty();
+		then(eventProducer).shouldHaveNoInteractions();
+	}
+
+	@Test
+	void flagEmployeePropagatesEventPublicationFailure() {
+		given(surveyApiClient.getEmployeeById("5a94")).willReturn(sampleResponse());
+		willThrow(new com.example.EmployeeService.exception.EventPublicationException("Kafka down", new RuntimeException()))
+				.given(eventProducer).publish(any());
+
+		assertThatThrownBy(() -> employeeService.flagEmployee("5a94", "comment", "hr@example.com"))
+				.isInstanceOf(com.example.EmployeeService.exception.EventPublicationException.class);
 	}
 
 	@Test
