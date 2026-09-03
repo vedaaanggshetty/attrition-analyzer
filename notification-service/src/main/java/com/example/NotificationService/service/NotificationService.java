@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.NotificationService.dto.CreateNotificationRequest;
 import com.example.NotificationService.dto.NotificationDto;
 import com.example.NotificationService.entity.Notification;
 import com.example.NotificationService.exception.NotificationNotFoundException;
@@ -17,6 +18,17 @@ public class NotificationService {
 
     public NotificationService(NotificationRepository notificationRepository) {
         this.notificationRepository = notificationRepository;
+    }
+
+    public NotificationDto createNotification(CreateNotificationRequest request, String hrUserEmail) {
+        Notification notification = new Notification(
+                request.employeeId(),
+                request.employeeName(),
+                request.department(),
+                hrUserEmail,
+                request.comment());
+        notification = notificationRepository.save(notification);
+        return toDto(notification);
     }
 
     public List<NotificationDto> getNotificationsForUser(String hrUserEmail) {

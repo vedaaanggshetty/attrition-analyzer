@@ -13,9 +13,11 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.example.NotificationService.dto.CreateNotificationRequest;
 import com.example.NotificationService.dto.NotificationDto;
 import com.example.NotificationService.entity.Notification;
 import com.example.NotificationService.exception.NotificationNotFoundException;
@@ -36,6 +38,26 @@ class NotificationServiceTest {
 
     private static Notification sampleNotification(String owner) {
         return new Notification("5a94", "Leonelle Simco", "Sales", owner, "Flight risk, discuss retention");
+    }
+
+    @Test
+    void createNotificationSavesAndReturnsNotificationForCurrentUser() {
+        CreateNotificationRequest request = new CreateNotificationRequest(
+                "5a94", "Leonelle Simco", "Sales", "Flight risk, discuss retention");
+        ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
+        given(notificationRepository.save(captor.capture())).willAnswer(invocation -> invocation.getArgument(0));
+
+        NotificationDto result = notificationService.createNotification(request, "hr@example.com");
+
+        Notification saved = captor.getValue();
+        assertThat(saved.getEmployeeId()).isEqualTo("5a94");
+        assertThat(saved.getEmployeeName()).isEqualTo("Leonelle Simco");
+        assertThat(saved.getDepartment()).isEqualTo("Sales");
+        assertThat(saved.getHrUserEmail()).isEqualTo("hr@example.com");
+        assertThat(saved.getComment()).isEqualTo("Flight risk, discuss retention");
+
+        assertThat(result.employeeName()).isEqualTo("Leonelle Simco");
+        assertThat(result.comment()).isEqualTo("Flight risk, discuss retention");
     }
 
     @Test
