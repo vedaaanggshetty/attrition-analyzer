@@ -14,6 +14,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.example.EmployeeService.dto.AttritionAnalysisDto;
 import com.example.EmployeeService.dto.EmployeeDto;
 import com.example.EmployeeService.exception.SurveyApiException;
 import com.example.EmployeeService.service.EmployeeService;
@@ -91,5 +92,27 @@ class EmployeeControllerTest {
 
 		mockMvc.perform(get("/employees/missing"))
 				.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void getAttritionByDepartmentReturnsAggregatedResults() throws Exception {
+		given(employeeService.getAttritionByDepartment()).willReturn(List.of(
+				new AttritionAnalysisDto("Sales", 4, 2, 50.0)));
+
+		mockMvc.perform(get("/employees/analysis/department"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].groupLabel").value("Sales"))
+				.andExpect(jsonPath("$[0].totalEmployees").value(4))
+				.andExpect(jsonPath("$[0].attritionCount").value(2))
+				.andExpect(jsonPath("$[0].attritionRate").value(50.0));
+	}
+
+	@Test
+	void getAttritionByDepartmentReturns503WhenSurveyApiIsDown() throws Exception {
+		given(employeeService.getAttritionByDepartment())
+				.willThrow(new SurveyApiException("Survey API down", new RuntimeException()));
+
+		mockMvc.perform(get("/employees/analysis/department"))
+				.andExpect(status().isServiceUnavailable());
 	}
 }

@@ -22,6 +22,7 @@ import feign.Response;
 
 import com.example.EmployeeService.client.SurveyApiClient;
 import com.example.EmployeeService.client.SurveyEmployeeResponse;
+import com.example.EmployeeService.dto.AttritionAnalysisDto;
 import com.example.EmployeeService.dto.EmployeeDto;
 import com.example.EmployeeService.exception.SurveyApiException;
 
@@ -49,6 +50,13 @@ class EmployeeServiceTest {
 		Request request = Request.create(Request.HttpMethod.GET, "/survey", Map.of(), null, StandardCharsets.UTF_8);
 		Response response = Response.builder().status(status).request(request).headers(Map.of()).build();
 		return FeignException.errorStatus("call", response);
+	}
+
+	private static SurveyEmployeeResponse responseWith(String department, String attrition) {
+		return new SurveyEmployeeResponse(
+				"3012-1A41", "Leonelle", "Simco", "Female", 30, "Some Travel", department, 27,
+				"IL", "White", 5, "Marketing", "Sales Executive", "Divorced", 102059, 1,
+				"No", "2012-01-03", attrition, 10, 4, 9, 7, "5a94");
 	}
 
 	@Test
@@ -82,6 +90,58 @@ class EmployeeServiceTest {
 		given(surveyApiClient.getAllEmployees()).willThrow(feignError(500));
 
 		assertThatThrownBy(() -> employeeService.getAllEmployees())
+				.isInstanceOf(SurveyApiException.class);
+	}
+
+	@Test
+	void getAttritionByDepartmentGroupsAndCalculatesRateCorrectly() {
+		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
+				responseWith("Sales", "Yes"),
+				responseWith("Sales", "No"),
+				responseWith("Sales", "No"),
+				responseWith("Sales", "Yes"),
+				responseWith("Technology", "No"),
+				responseWith("Technology", "No")));
+
+		List<AttritionAnalysisDto> result = employeeService.getAttritionByDepartment();
+
+		assertThat(result).hasSize(2);
+
+		AttritionAnalysisDto sales = result.get(0);
+		assertThat(sales.groupLabel()).isEqualTo("Sales");
+		assertThat(sales.totalEmployees()).isEqualTo(4);
+		assertThat(sales.attritionCount()).isEqualTo(2);
+		assertThat(sales.attritionRate()).isEqualTo(50.0);
+
+		AttritionAnalysisDto technology = result.get(1);
+		assertThat(technology.groupLabel()).isEqualTo("Technology");
+		assertThat(technology.totalEmployees()).isEqualTo(2);
+		assertThat(technology.attritionCount()).isEqualTo(0);
+		assertThat(technology.attritionRate()).isEqualTo(0.0);
+	}
+
+	@Test
+	void getAttritionByDepartmentReturnsEmptyListWhenNoEmployees() {
+		given(surveyApiClient.getAllEmployees()).willReturn(List.of());
+
+		assertThat(employeeService.getAttritionByDepartment()).isEmpty();
+	}
+
+	@Test
+	void getAttritionByDepartmentGroupsBlankDepartmentAsUnknown() {
+		given(surveyApiClient.getAllEmployees()).willReturn(List.of(responseWith("", "Yes")));
+
+		List<AttritionAnalysisDto> result = employeeService.getAttritionByDepartment();
+
+		assertThat(result).hasSize(1);
+		assertThat(result.get(0).groupLabel()).isEqualTo("Unknown");
+	}
+
+	@Test
+	void getAttritionByDepartmentThrowsSurveyApiExceptionOnFailure() {
+		given(surveyApiClient.getAllEmployees()).willThrow(feignError(500));
+
+		assertThatThrownBy(() -> employeeService.getAttritionByDepartment())
 				.isInstanceOf(SurveyApiException.class);
 	}
 }

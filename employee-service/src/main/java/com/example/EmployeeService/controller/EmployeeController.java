@@ -1,5 +1,7 @@
 package com.example.EmployeeService.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -8,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.EmployeeService.dto.AttritionAnalysisDto;
 import com.example.EmployeeService.dto.ErrorResponse;
 import com.example.EmployeeService.service.EmployeeService;
 
@@ -46,5 +49,10 @@ public class EmployeeController {
 				.<ResponseEntity<?>>map(ResponseEntity::ok)
 				.orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
 						.body(new ErrorResponse("Employee not found")));
+	}
+
+	@GetMapping("/employees/analysis/department")
+	public List<AttritionAnalysisDto> getAttritionByDepartment() {
+		return employeeService.getAttritionByDepartment();
 	}
 }
