@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import { SplashScreen } from "./components/layout/SplashScreen";
 import { PublicLayout } from "./components/layout/PublicLayout";
 import { AppLayout } from "./components/layout/AppLayout";
+import { ProtectedRoute } from "./components/routing/ProtectedRoute";
 import { Landing } from "./pages/Landing";
 import { About } from "./pages/About";
 import { Dashboard } from "./pages/Dashboard";
@@ -26,11 +27,13 @@ export default function App() {
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/employees" element={<EmployeeList />} />
-          <Route path="/employees/:id" element={<EmployeeDetail />} />
-          <Route path="/profile" element={<Profile />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/employees" element={<EmployeeList />} />
+            <Route path="/employees/:id" element={<EmployeeDetail />} />
+            <Route path="/profile" element={<Profile />} />
+          </Route>
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>

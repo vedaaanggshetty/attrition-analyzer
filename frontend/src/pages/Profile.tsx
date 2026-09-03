@@ -1,27 +1,75 @@
-import { useState } from "react";
-import { currentUser } from "../data/mockData";
+import { useEffect, useState } from "react";
 import { formatDate } from "../lib/utils";
+import { ApiError } from "../lib/apiClient";
+import { getMyProfile, updateMyProfile, type ProfileResponse } from "../lib/authApi";
+import { useAuth } from "../context/AuthContext";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Card } from "../components/ui/Card";
 import { Avatar } from "../components/ui/Avatar";
 import { Button } from "../components/ui/Button";
+import { Skeleton } from "../components/ui/Skeleton";
 
 export function Profile() {
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<ProfileResponse | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [form, setForm] = useState({ fullName: currentUser.fullName, phone: currentUser.phone });
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [form, setForm] = useState({ fullName: "", phone: "" });
 
-  function handleSave(e: React.FormEvent) {
+  useEffect(() => {
+    getMyProfile()
+      .then((data) => {
+        setProfile(data);
+        setForm({ fullName: data.fullName, phone: data.phone });
+      })
+      .catch((err) => setLoadError(err instanceof ApiError ? err.message : "Couldn't load your profile."));
+  }, []);
+
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    // UI-only mock submission; wire this to PUT /users/{id} later.
-    window.setTimeout(() => {
-      setSaving(false);
+    setSaveError(null);
+    try {
+      const updated = await updateMyProfile(form);
+      setProfile(updated);
       setEditing(false);
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2500);
-    }, 600);
+    } catch (err) {
+      setSaveError(err instanceof ApiError ? err.message : "Couldn't save your changes.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <PageHeader eyebrow="Account" title="Profile" description="Manage your account and settings." />
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{loadError}</p>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <PageHeader eyebrow="Account" title="Profile" description="Manage your account and settings." />
+        <Card className="p-6 sm:p-8">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-56" />
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -30,14 +78,10 @@ export function Profile() {
 
       <Card className="p-6 sm:p-8">
         <div className="flex items-center gap-4">
-          <Avatar
-            firstName={currentUser.fullName.split(" ")[0]}
-            lastName={currentUser.fullName.split(" ")[1] ?? ""}
-            size="lg"
-          />
+          <Avatar firstName={profile.fullName.split(" ")[0]} lastName={profile.fullName.split(" ")[1] ?? ""} size="lg" />
           <div>
-            <h2 className="font-display text-xl font-semibold text-brand-900">{currentUser.fullName}</h2>
-            <p className="text-sm text-neutral-500">{currentUser.email}</p>
+            <h2 className="font-display text-xl font-semibold text-brand-900">{profile.fullName}</h2>
+            <p className="text-sm text-neutral-500">{profile.email}</p>
           </div>
         </div>
 
@@ -48,14 +92,20 @@ export function Profile() {
             disabled={!editing}
             onChange={(v) => setForm((f) => ({ ...f, fullName: v }))}
           />
-          <TextField label="Email" value={currentUser.email} disabled />
+          <TextField label="Email" value={profile.email} disabled />
           <TextField
             label="Phone"
             value={form.phone}
             disabled={!editing}
             onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
           />
-          <TextField label="Role" value={currentUser.role} disabled />
+          <TextField label="Role" value={user?.role ?? "HR User"} disabled />
+
+          {saveError && (
+            <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700 sm:col-span-2">
+              {saveError}
+            </p>
+          )}
 
           <div className="flex items-center gap-3 sm:col-span-2">
             {editing ? (
@@ -68,7 +118,8 @@ export function Profile() {
                   variant="secondary"
                   size="sm"
                   onClick={() => {
-                    setForm({ fullName: currentUser.fullName, phone: currentUser.phone });
+                    setForm({ fullName: profile.fullName, phone: profile.phone });
+                    setSaveError(null);
                     setEditing(false);
                   }}
                 >
@@ -90,15 +141,15 @@ export function Profile() {
         <dl className="mt-5 flex flex-col gap-4 text-sm">
           <div className="flex items-center justify-between border-b border-brand-900/8 pb-4">
             <dt className="text-neutral-500">User ID</dt>
-            <dd className="font-mono text-xs text-neutral-700">{currentUser.userId}</dd>
+            <dd className="font-mono text-xs text-neutral-700">{profile.userId}</dd>
           </div>
           <div className="flex items-center justify-between border-b border-brand-900/8 pb-4">
             <dt className="text-neutral-500">Member since</dt>
-            <dd className="font-medium text-brand-900">{formatDate(currentUser.createdAt)}</dd>
+            <dd className="font-medium text-brand-900">{formatDate(profile.createdAt)}</dd>
           </div>
           <div className="flex items-center justify-between">
             <dt className="text-neutral-500">Access level</dt>
-            <dd className="font-medium text-brand-900">{currentUser.role}</dd>
+            <dd className="font-medium text-brand-900">{user?.role ?? "HR User"}</dd>
           </div>
         </dl>
       </Card>

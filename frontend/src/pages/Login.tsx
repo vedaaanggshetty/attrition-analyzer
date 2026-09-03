@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthLayout } from "../components/layout/AuthLayout";
 import { FormField } from "../components/ui/FormField";
 import { Button } from "../components/ui/Button";
+import { useAuth } from "../context/AuthContext";
+import { ApiError } from "../lib/apiClient";
 
 interface Errors {
   email?: string;
@@ -11,6 +13,8 @@ interface Errors {
 
 export function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Errors>({});
@@ -26,21 +30,21 @@ export function Login() {
     return Object.keys(next).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
     if (!validate()) return;
 
     setSubmitting(true);
-    // UI-only mock submission; wire this to POST /auth/login later.
-    window.setTimeout(() => {
+    try {
+      await login(email, password);
+      const from = (location.state as { from?: Location })?.from?.pathname ?? "/dashboard";
+      navigate(from, { replace: true });
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : "Something went wrong. Try again.");
+    } finally {
       setSubmitting(false);
-      if (password.length < 6) {
-        setFormError("Incorrect email or password.");
-        return;
-      }
-      navigate("/dashboard");
-    }, 700);
+    }
   }
 
   return (

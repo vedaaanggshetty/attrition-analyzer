@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { cx } from "../../lib/utils";
 import { currentUser } from "../../data/mockData";
+import { useAuth } from "../../context/AuthContext";
 import { Avatar } from "../ui/Avatar";
 import { Wordmark } from "../ui/Wordmark";
 
@@ -13,6 +14,13 @@ const NAV_ITEMS = [
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    navigate("/login", { replace: true });
+  }
 
   return (
     <div className="flex min-h-screen bg-brand-50/40">
@@ -56,10 +64,18 @@ export function AppLayout() {
 
         <div className="mt-auto flex items-center gap-3 rounded-xl border border-brand-900/10 p-3">
           <Avatar firstName={currentUser.fullName.split(" ")[0]} lastName={currentUser.fullName.split(" ")[1] ?? ""} size="sm" />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-brand-900">{currentUser.fullName}</p>
             <p className="truncate text-xs text-neutral-500">{currentUser.role}</p>
           </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            aria-label="Log out"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-brand-50 hover:text-brand-900"
+          >
+            <LogoutIcon className="h-4 w-4" />
+          </button>
         </div>
       </aside>
 
@@ -110,6 +126,14 @@ function UserIcon(props: React.SVGProps<SVGSVGElement>) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" {...props}>
       <circle cx="12" cy="8" r="3.5" />
       <path d="M4.5 20c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5" />
+    </svg>
+  );
+}
+function LogoutIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" {...props}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16 17l5-5-5-5M21 12H9" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

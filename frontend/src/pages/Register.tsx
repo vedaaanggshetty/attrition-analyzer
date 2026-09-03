@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { AuthLayout } from "../components/layout/AuthLayout";
 import { FormField } from "../components/ui/FormField";
 import { Button } from "../components/ui/Button";
+import { useAuth } from "../context/AuthContext";
+import { ApiError } from "../lib/apiClient";
 
 interface Errors {
   fullName?: string;
@@ -13,6 +15,7 @@ interface Errors {
 
 export function Register() {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [form, setForm] = useState({ fullName: "", email: "", password: "", confirmPassword: "" });
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -34,21 +37,20 @@ export function Register() {
     return Object.keys(next).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
     if (!validate()) return;
 
     setSubmitting(true);
-    // UI-only mock submission; wire this to POST /users/register later.
-    window.setTimeout(() => {
+    try {
+      await register(form.fullName, form.email, form.password);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : "Something went wrong. Try again.");
+    } finally {
       setSubmitting(false);
-      if (form.email.toLowerCase() === "taken@attritionanalyzer.com") {
-        setFormError("An account with this email already exists.");
-        return;
-      }
-      navigate("/dashboard");
-    }, 700);
+    }
   }
 
   return (
