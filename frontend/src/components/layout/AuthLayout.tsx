@@ -39,8 +39,8 @@ export function AuthLayout({
         </Link>
 
         <div className="mx-auto w-full max-w-sm">
-          <h1 className="font-serif text-3xl font-semibold italic tracking-tight text-brand-900">{title}</h1>
-          <p className="mt-2 text-sm text-neutral-500">{subtitle}</p>
+          <h1 className="font-serif text-3xl font-semibold italic tracking-tight text-ink-900">{title}</h1>
+          <p className="mt-2 text-base text-neutral-500">{subtitle}</p>
           <div className="mt-8">{children}</div>
           <p className="mt-6 text-center text-sm text-neutral-500">{footer}</p>
         </div>

@@ -58,13 +58,13 @@ export function BentoFeatures() {
   const ref = useReveal<HTMLDivElement>(100);
 
   return (
-    <section className="relative mx-auto max-w-7xl px-6 pb-24 lg:px-10 lg:pb-32">
+    <section className="relative mx-auto max-w-7xl px-6 pb-24 pt-4 lg:px-10 lg:pb-32 lg:pt-8">
       <div
         ref={ref}
         data-reveal
         className="relative overflow-hidden rounded-[2rem] p-6 sm:p-8 lg:p-10"
         style={{
-          background: "linear-gradient(160deg, #04122a 0%, #0a2a55 55%, #0d47a1 130%)",
+          background: "linear-gradient(160deg, #050505 0%, #101012 55%, #1c1c1f 130%)",
         }}
       >
         <NetworkIllustration />
@@ -97,7 +97,7 @@ function BentoCard({ item }: { item: (typeof ITEMS)[number] }) {
       <div
         className="pointer-events-none absolute -inset-24 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
         style={{
-          background: "radial-gradient(circle at 30% 20%, rgba(144,202,249,0.16), transparent 60%)",
+          background: "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.1), transparent 60%)",
         }}
         aria-hidden="true"
       />
@@ -107,7 +107,7 @@ function BentoCard({ item }: { item: (typeof ITEMS)[number] }) {
       />
       <div className="relative mt-8">
         <h3 className="text-base font-semibold text-white">{item.title}</h3>
-        <p className="mt-2 text-sm leading-relaxed text-blue-100/60">{item.description}</p>
+        <p className="mt-2 text-sm leading-relaxed text-white/55">{item.description}</p>
       </div>
     </div>
   );
@@ -131,7 +131,7 @@ function NetworkIllustration() {
       aria-hidden="true"
       className="pointer-events-none absolute right-0 top-0 h-[180px] w-[420px] opacity-40 sm:opacity-60"
     >
-      <g stroke="#90caf9" strokeWidth="1" opacity="0.5">
+      <g stroke="#9a9ca3" strokeWidth="1" opacity="0.5">
         <line x1="620" y1="40" x2="700" y2="90" />
         <line x1="700" y1="90" x2="660" y2="140" />
         <line x1="700" y1="90" x2="740" y2="30" />
@@ -140,7 +140,7 @@ function NetworkIllustration() {
         <line x1="660" y1="140" x2="600" y2="110" />
       </g>
       {nodes.map((n, i) => (
-        <circle key={i} cx={n.x} cy={n.y} r={n.r} fill="#e3f2fd" opacity={i === 1 ? 0.9 : 0.55} />
+        <circle key={i} cx={n.x} cy={n.y} r={n.r} fill="#f4f4f5" opacity={i === 1 ? 0.9 : 0.55} />
       ))}
     </svg>
   );

@@ -145,7 +145,7 @@ export function EmployeeList() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name, ID, or job role..."
           disabled={!employees}
-          className="w-full rounded-full border border-brand-900/12 bg-white py-2.5 pl-11 pr-4 text-sm outline-none transition-colors placeholder:text-neutral-400 focus:border-brand-900/40 disabled:bg-brand-50/50"
+          className="shadow-control w-full rounded-full border border-brand-900/12 bg-white py-2.5 pl-11 pr-4 text-sm text-ink-900 outline-none transition-all duration-200 placeholder:text-neutral-400 hover:border-brand-900/20 focus:border-brand-900/40 focus:shadow-surface disabled:bg-brand-50/50"
         />
       </div>
 
@@ -273,13 +273,13 @@ function FilterSelect({
   renderLabel?: (value: string) => string;
 }) {
   return (
-    <label className="inline-flex items-center gap-1.5 rounded-full border border-brand-900/12 bg-white pl-3 pr-2 py-1.5 text-xs">
+    <label className="shadow-control inline-flex items-center gap-1.5 rounded-full border border-brand-900/12 bg-white py-1.5 pl-3.5 pr-2.5 text-xs transition-all duration-200 hover:border-brand-900/20 hover:shadow-surface has-[select:focus]:border-brand-900/40 has-[select:focus]:shadow-surface">
       <span className="font-semibold uppercase tracking-wide text-neutral-400">{label}</span>
       <select
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className="bg-transparent text-xs font-medium text-brand-900 outline-none disabled:text-neutral-400"
+        className="rounded-md bg-transparent text-xs font-medium text-brand-900 outline-none disabled:text-neutral-400"
       >
         {options.map((o) => (
           <option key={o} value={o}>

@@ -28,7 +28,7 @@ export function Hero() {
       <div ref={ref} className="relative mx-auto max-w-5xl px-6 text-center lg:px-10">
         <h1
           data-reveal
-          className="font-display text-[clamp(2.75rem,7vw,6rem)] font-semibold leading-[0.98] tracking-tight text-brand-900"
+          className="font-display text-[clamp(2.75rem,7vw,6rem)] font-semibold leading-[0.98] tracking-tight text-ink-900"
         >
           Understand your <span className="font-serif italic text-neutral-800">workforce.</span>
           <br />
@@ -120,8 +120,8 @@ function AbstractWorkforceVisual() {
             const ny = Math.floor(next / 7) * 220 + 60;
             return (
               <g key={i}>
-                {i % 7 !== 6 && <line x1={x} y1={y} x2={nx} y2={ny} stroke="#0d47a1" strokeWidth="1" />}
-                <circle cx={x} cy={y} r={i % 5 === 0 ? 10 : 5} fill="#0d47a1" />
+                {i % 7 !== 6 && <line x1={x} y1={y} x2={nx} y2={ny} stroke="#0a0a0a" strokeWidth="1" />}
+                <circle cx={x} cy={y} r={i % 5 === 0 ? 10 : 5} fill="#0a0a0a" />
               </g>
             );
           })}

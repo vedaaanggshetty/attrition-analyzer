@@ -18,7 +18,7 @@ export function CtaSection() {
           className="pointer-events-none absolute inset-0 opacity-25"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 20% 20%, white 0, transparent 45%), radial-gradient(circle at 80% 70%, #2196F3 0, transparent 40%)",
+              "radial-gradient(circle at 20% 20%, white 0, transparent 45%), radial-gradient(circle at 80% 70%, #6b6b6b 0, transparent 40%)",
           }}
           aria-hidden="true"
         />

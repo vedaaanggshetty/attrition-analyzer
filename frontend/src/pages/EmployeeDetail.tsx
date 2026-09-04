@@ -173,7 +173,7 @@ export function EmployeeDetail() {
               size="xl"
             />
             <div className="pt-2">
-              <h1 className="font-serif text-4xl md:text-5xl font-semibold italic tracking-tight text-brand-900 mb-2">
+              <h1 className="font-serif text-4xl md:text-5xl font-semibold italic tracking-tight text-ink-900 mb-2">
                 {employee.firstName} {employee.lastName}
               </h1>
               <p className="text-lg text-neutral-600 font-medium">
@@ -238,8 +238,8 @@ export function EmployeeDetail() {
               plus the flag/comment action. */}
           <div className="md:col-span-5 flex flex-col gap-8">
             <section className="bg-neutral-50 rounded-2xl p-6 border border-brand-900/5">
-              <h3 className="font-serif text-lg font-semibold text-brand-900 mb-1">Attrition Analysis</h3>
-              <p className="text-sm text-neutral-500 mb-5">
+              <h3 className="font-serif text-lg font-semibold text-ink-900 mb-1">Attrition Analysis</h3>
+              <p className="text-base text-neutral-500 mb-5">
                 Where this employee falls across the six attrition dimensions (US-11–US-16).
               </p>
               <div className="flex flex-col divide-y divide-brand-900/8">
@@ -253,7 +253,7 @@ export function EmployeeDetail() {
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
                         {link.label}
                       </p>
-                      <p className="truncate text-sm font-medium text-brand-900">{link.value}</p>
+                      <p className="truncate text-sm font-medium text-ink-900">{link.value}</p>
                     </div>
                     <span className="shrink-0 text-xs font-semibold text-brand-500 opacity-0 transition-opacity group-hover:opacity-100">
                       View group &rarr;
@@ -265,8 +265,8 @@ export function EmployeeDetail() {
 
             {user?.role !== "Guest" && (
               <section className="bg-white rounded-2xl p-6 border border-brand-900/10 shadow-sm">
-                <h3 className="font-serif text-lg font-semibold text-brand-900 mb-2">Send Notification</h3>
-                <p className="text-sm text-neutral-500 mb-6">
+                <h3 className="font-serif text-lg font-semibold text-ink-900 mb-2">Send Notification</h3>
+                <p className="text-base text-neutral-500 mb-6">
                   Write a note for the HR team about this employee. It'll appear in Notifications for every HR user.
                 </p>
 
@@ -299,7 +299,7 @@ export function EmployeeDetail() {
                     <div key={note.id} className="relative pl-4 border-l border-brand-900/10 pb-4 last:pb-0">
                       <div className="absolute w-2 h-2 bg-neutral-200 rounded-full -left-[4.5px] top-1.5"></div>
                       <div className="flex items-baseline justify-between gap-2 mb-1">
-                        <span className="text-xs font-semibold text-brand-900">
+                        <span className="text-xs font-semibold text-ink-900">
                           Sent by {user?.fullName ?? user?.email ?? "you"}
                         </span>
                         <span className="text-[10px] text-neutral-400 uppercase tracking-wide">
@@ -332,7 +332,7 @@ function DataRow({ label, value, highlight = false }: { label: string; value: st
     <div className="flex flex-col gap-1.5">
       <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">{label}</span>
       <span
-        className={`text-sm ${highlight ? "font-display font-semibold text-lg tracking-tight text-brand-900" : "font-medium text-brand-900"}`}
+        className={`text-sm ${highlight ? "font-display font-semibold text-lg tracking-tight text-ink-900" : "font-medium text-ink-900"}`}
       >
         {value}
       </span>

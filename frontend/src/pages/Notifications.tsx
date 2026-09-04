@@ -63,38 +63,38 @@ export function Notifications() {
 
   if (loadError) {
     return (
-      <div className="mx-auto max-w-6xl">
+      <div className="w-full">
         <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{loadError}</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-5">
+    <div className="flex w-full flex-col gap-4">
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <div
-        className="relative overflow-hidden rounded-3xl border border-brand-900/10 p-7 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_20px_44px_-24px_rgba(13,71,161,0.45)] sm:p-9"
-        style={{ background: "linear-gradient(135deg, #0a2a55 0%, #0d47a1 60%, #1565c0 130%)" }}
+        className="relative overflow-hidden rounded-3xl border border-brand-900/10 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_20px_44px_-24px_rgba(0,0,0,0.45)] sm:p-6"
+        style={{ background: "linear-gradient(135deg, #050505 0%, #141414 60%, #1f1f1f 130%)" }}
       >
         <BellGlyph />
         <div className="relative flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/10 backdrop-blur-sm">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/10 backdrop-blur-sm">
             <Bell className="h-5 w-5" strokeWidth={1.75} />
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-white/45">HR</p>
-            <h1 className="font-serif text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
+            <h1 className="font-serif text-2xl font-semibold italic tracking-tight text-white sm:text-3xl">
               Notifications
             </h1>
           </div>
         </div>
-        <p className="relative mt-3 max-w-lg text-sm leading-relaxed text-blue-100/70">
+        <p className="relative mt-2.5 max-w-lg text-sm leading-relaxed text-white/60">
           Every note you've sent from an employee's record, in one place - who it's about, what you said, and when.
         </p>
       </div>
 
       {/* ── KPI row ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
         <KpiTile label="Total" value={stats?.total} sub="all time" />
         <KpiTile label="Last 24h" value={stats?.last24h} sub="new activity" accent />
         <KpiTile label="This week" value={stats?.last7d} sub="past 7 days" />
@@ -107,10 +107,10 @@ export function Notifications() {
       </div>
 
       {/* ── Main bento: timeline + side summary ─────────────────── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <div className="glass-card rounded-3xl p-5 sm:p-7 lg:col-span-8">
-          <div className="mb-5 flex items-baseline justify-between">
-            <h2 className="font-serif text-lg font-semibold italic text-brand-900">Activity</h2>
+      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-12">
+        <div className="glass-card rounded-3xl p-4 sm:p-5 lg:col-span-8">
+          <div className="mb-4 flex items-baseline justify-between">
+            <h2 className="font-serif text-lg font-semibold italic text-ink-900">Activity</h2>
             {stats ? (
               <span className="text-xs font-medium text-neutral-400">
                 {stats.total} notification{stats.total === 1 ? "" : "s"}
@@ -143,13 +143,13 @@ export function Notifications() {
         </div>
 
         {/* ── Side column: recency + department breakdown ────────── */}
-        <div className="flex flex-col gap-4 lg:col-span-4">
-          <div className="glass-card rounded-3xl p-5 sm:p-6">
+        <div className="flex flex-col gap-3.5 lg:col-span-4">
+          <div className="glass-card rounded-3xl p-4 sm:p-5">
             <div className="mb-1 flex items-center gap-2">
               <Clock className="h-4 w-4 text-brand-500" strokeWidth={1.75} />
-              <h3 className="text-sm font-semibold text-brand-900">Recent activity</h3>
+              <h3 className="text-sm font-semibold text-ink-900">Recent activity</h3>
             </div>
-            <p className="mb-4 text-xs text-neutral-400">Most recent notifications sent</p>
+            <p className="mb-4 text-sm text-neutral-500">Most recent notifications sent</p>
             {!notifications ? (
               <div className="flex flex-col gap-3.5 animate-pulse">
                 {Array.from({ length: 3 }, (_, i) => (
@@ -171,7 +171,7 @@ export function Notifications() {
                     >
                       <Avatar firstName={n.employeeName.split(" ")[0]} lastName={n.employeeName.split(" ")[1] ?? ""} size="sm" />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-semibold text-brand-900 group-hover:text-brand-700">
+                        <p className="truncate text-xs font-semibold text-ink-900 group-hover:text-brand-700">
                           {n.employeeName}
                         </p>
                         <p className="text-[11px] text-neutral-400">{formatRelativeTime(n.createdAt)}</p>
@@ -183,12 +183,12 @@ export function Notifications() {
             )}
           </div>
 
-          <div className="glass-card rounded-3xl p-5 sm:p-6">
+          <div className="glass-card rounded-3xl p-4 sm:p-5">
             <div className="mb-1 flex items-center gap-2">
               <Building2 className="h-4 w-4 text-brand-500" strokeWidth={1.75} />
-              <h3 className="text-sm font-semibold text-brand-900">By department</h3>
+              <h3 className="text-sm font-semibold text-ink-900">By department</h3>
             </div>
-            <p className="mb-4 text-xs text-neutral-400">Where notifications concentrate</p>
+            <p className="mb-4 text-sm text-neutral-500">Where notifications concentrate</p>
             {!stats ? (
               <div className="flex flex-col gap-3.5 animate-pulse">
                 {Array.from({ length: 3 }, (_, i) => (
@@ -205,14 +205,14 @@ export function Notifications() {
                     <li key={dept}>
                       <Link to={`/employees?department=${encodeURIComponent(dept)}`} className="group block">
                         <div className="mb-1.5 flex items-baseline justify-between gap-2">
-                          <span className="truncate text-xs font-medium text-brand-900 group-hover:text-brand-700">
+                          <span className="truncate text-xs font-medium text-ink-900 group-hover:text-brand-700">
                             {dept}
                           </span>
                           <span className="num shrink-0 text-xs font-semibold text-neutral-400">{count}</span>
                         </div>
                         <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100">
                           <div
-                            className="h-full rounded-full bg-gradient-to-r from-brand-500 to-indigo-500 transition-[width] duration-700 ease-out"
+                            className="h-full rounded-full bg-gradient-to-r from-brand-700 to-brand-500 transition-[width] duration-700 ease-out"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
@@ -243,7 +243,7 @@ function KpiTile({
   isText?: boolean;
 }) {
   return (
-    <div className="glass-card flex flex-col justify-between rounded-2xl p-4 transition-shadow duration-300 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_32px_-16px_rgba(13,71,161,0.18)]">
+    <div className="glass-card flex flex-col justify-between rounded-2xl p-4 transition-shadow duration-300 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_32px_-16px_rgba(0,0,0,0.18)]">
       <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">{label}</span>
       {value !== undefined ? (
         <p
@@ -289,7 +289,7 @@ function TimelineRow({
       <div
         className={cx(
           "grid grid-cols-[44px_16px_1fr_28px] items-start gap-x-2.5 rounded-2xl px-2.5 py-3 transition-all duration-200 sm:grid-cols-[64px_16px_100px_1fr_28px] sm:gap-x-3.5 sm:px-3",
-          "hover:bg-gradient-to-r hover:from-white hover:to-brand-50/50 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_20px_-12px_rgba(13,71,161,0.18)] hover:ring-1 hover:ring-brand-900/[0.06]",
+          "hover:bg-gradient-to-r hover:from-white hover:to-brand-50/50 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_20px_-12px_rgba(0,0,0,0.18)] hover:ring-1 hover:ring-brand-900/[0.06]",
           "focus-within:bg-gradient-to-r focus-within:from-white focus-within:to-brand-50/50 focus-within:ring-1 focus-within:ring-brand-900/[0.06]"
         )}
       >
@@ -325,7 +325,7 @@ function TimelineRow({
             <span className="text-xs font-medium text-neutral-400">{timeLabel}</span>
             <span className="text-xs font-semibold text-neutral-500">#{note.id}</span>
           </div>
-          <p className="text-sm font-semibold text-brand-900">{note.employeeName}</p>
+          <p className="text-sm font-semibold text-ink-900">{note.employeeName}</p>
           <p className="mt-0.5 line-clamp-2 text-sm leading-relaxed text-neutral-600">{note.comment}</p>
           <p className="mt-1 text-xs text-neutral-400">
             {note.department} · Sent by {senderName}
@@ -377,9 +377,9 @@ function BellGlyph() {
       aria-hidden="true"
       className="pointer-events-none absolute -right-6 -top-8 h-44 w-64 opacity-[0.14]"
     >
-      <circle cx="220" cy="70" r="70" fill="none" stroke="#e3f2fd" strokeWidth="1.5" />
-      <circle cx="260" cy="140" r="34" fill="none" stroke="#e3f2fd" strokeWidth="1.5" />
-      <circle cx="150" cy="160" r="16" fill="#e3f2fd" opacity="0.5" />
+      <circle cx="220" cy="70" r="70" fill="none" stroke="#f4f4f5" strokeWidth="1.5" />
+      <circle cx="260" cy="140" r="34" fill="none" stroke="#f4f4f5" strokeWidth="1.5" />
+      <circle cx="150" cy="160" r="16" fill="#f4f4f5" opacity="0.5" />
     </svg>
   );
 }

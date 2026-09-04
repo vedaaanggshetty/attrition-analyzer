@@ -36,7 +36,7 @@ export function EmployeeCard({ employee, featured = false }: { employee: Employe
           </div>
 
           <div className="min-w-0">
-            <p className={cx("truncate font-semibold text-brand-900 mb-1 tracking-tight", featured ? "text-2xl" : "text-lg")}>
+            <p className={cx("truncate font-semibold text-ink-900 mb-1 tracking-tight", featured ? "text-2xl" : "text-lg")}>
               {employee.firstName} {employee.lastName}
             </p>
             <p className="truncate text-sm font-medium text-neutral-500 mb-4">{employee.jobRole}</p>
@@ -66,7 +66,7 @@ export function EmployeeCard({ employee, featured = false }: { employee: Employe
         <div className="mt-8 flex items-end justify-between pt-4 border-t border-brand-900/5">
           <div className="flex flex-col">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-1">Base Salary</span>
-            <span className="font-display text-lg font-medium tracking-tight tabular-nums text-brand-900">
+            <span className="font-display text-lg font-medium tracking-tight tabular-nums text-ink-900">
               {formatCurrency(employee.salary)}
             </span>
           </div>

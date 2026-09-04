@@ -195,7 +195,11 @@ export function Dashboard() {
       </div>
 
       {/* ── US-11 Department + US-12 Job Role ─────────────────────── */}
-      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
+      {/* items-start: department typically has far fewer distinct groups
+          than job role - without this, the grid stretches the shorter card
+          to match its taller sibling, leaving a large empty gap under the
+          last row. Each card now sizes to its own content instead. */}
+      <div className="grid grid-cols-1 items-start gap-3.5 lg:grid-cols-2">
         <div id="department" className="scroll-mt-24">
           <AnalysisCard
             eyebrow="US-11"
@@ -261,9 +265,9 @@ export function Dashboard() {
             per-employee risk - just where the six analyses currently peak. */}
         <Card className="lg:col-span-3">
           <div className="mb-1 flex items-baseline justify-between">
-            <h2 className="font-serif text-lg font-semibold italic text-brand-900">Top Attrition Groups</h2>
+            <h2 className="font-serif text-xl font-semibold italic text-ink-900">Top Attrition Groups</h2>
           </div>
-          <p className="mb-4 text-sm text-neutral-500">Highest-attrition group in each of the six analyses</p>
+          <p className="mb-4 text-base text-neutral-500">Highest-attrition group in each of the six analyses</p>
           {!topGroups ? (
             <WatchlistSkeleton />
           ) : topGroups.length === 0 ? (
@@ -276,11 +280,11 @@ export function Dashboard() {
                   <Link
                     key={g.anchor}
                     to={`/employees?${g.queryKey}=${encodeURIComponent(g.row.groupLabel)}`}
-                    className="group flex items-center justify-between gap-3 rounded-2xl border border-neutral-200/70 bg-neutral-50/60 px-4 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-900/15 hover:bg-white hover:shadow-[0_8px_20px_-12px_rgba(13,71,161,0.25)]"
+                    className="group flex items-center justify-between gap-3 rounded-2xl border border-neutral-200/70 bg-neutral-50/60 px-4 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-900/15 hover:bg-white hover:shadow-[0_8px_20px_-12px_rgba(0,0,0,0.25)]"
                   >
                     <div className="min-w-0">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">{g.label}</p>
-                      <p className="truncate text-sm font-semibold text-brand-900">{g.row.groupLabel}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">{g.label}</p>
+                      <p className="truncate text-sm font-semibold text-ink-900">{g.row.groupLabel}</p>
                     </div>
                     <span className={cx("num shrink-0 text-sm font-bold", SEVERITY_TEXT[s])}>
                       {fmt(g.row.attritionRate)}%
@@ -295,7 +299,7 @@ export function Dashboard() {
         {/* Notifications */}
         <Card className="glass-card-dark !border-0 lg:col-span-2 text-white">
           <div className="mb-1 flex items-center justify-between">
-            <h2 className="font-serif text-lg font-semibold italic text-white">Recent Notifications</h2>
+            <h2 className="font-serif text-xl font-semibold italic text-white">Recent Notifications</h2>
             <Link to="/notifications" className="text-xs font-semibold text-white/50 hover:text-white transition-colors">
               View all →
             </Link>
@@ -349,7 +353,7 @@ function Card({ className, children }: { className?: string; children: React.Rea
   return (
     <div
       className={cx(
-        "glass-card rounded-3xl p-5 transition-shadow duration-300 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_20px_40px_-16px_rgba(13,71,161,0.18)]",
+        "glass-card rounded-3xl p-5 transition-shadow duration-300 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_20px_40px_-16px_rgba(0,0,0,0.18)]",
         className
       )}
     >
@@ -364,14 +368,14 @@ function PageTitle({ name }: { name: string }) {
   return (
     <div className="flex items-end justify-between gap-4">
       <div>
-        <h1 className="font-serif text-3xl font-semibold italic tracking-tight text-brand-900 sm:text-4xl">
+        <h1 className="font-serif text-3xl font-semibold italic tracking-tight text-ink-900 sm:text-4xl">
           Good morning, {name}
         </h1>
-        <p className="mt-1.5 text-sm text-neutral-500">{dateStr}</p>
+        <p className="mt-1.5 text-base text-neutral-500">{dateStr}</p>
       </div>
       <Link
         to="/employees"
-        className="group hidden shrink-0 items-center gap-2 rounded-full bg-brand-900 py-2.5 pl-4 pr-3 text-xs font-semibold text-white shadow-[0_8px_20px_-8px_rgba(13,71,161,0.6)] transition-all duration-300 hover:bg-brand-800 hover:pr-4 hover:shadow-[0_10px_24px_-8px_rgba(13,71,161,0.7)] sm:flex"
+        className="group hidden shrink-0 items-center gap-2 rounded-full bg-brand-900 py-2.5 pl-4 pr-3 text-xs font-semibold text-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.6)] transition-all duration-300 hover:bg-brand-700 hover:pr-4 hover:shadow-[0_10px_24px_-8px_rgba(0,0,0,0.7)] sm:flex"
       >
         Open Attrition Explorer
         <ChevronIcon className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -457,16 +461,16 @@ function AnalysisCard({
     <Card className="h-full">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-300">{eyebrow}</p>
-          <h3 className="font-serif text-base font-semibold italic text-brand-900">{title}</h3>
+          <p className="text-xs font-semibold uppercase tracking-wider text-brand-300">{eyebrow}</p>
+          <h3 className="font-serif text-lg font-semibold italic text-ink-900">{title}</h3>
         </div>
         {!compact && top ? <MiniSparkline data={data.slice(0, 7)} /> : null}
       </div>
       {compact && top ? (
         <div className="mb-4 flex items-baseline justify-between rounded-2xl bg-brand-50/50 px-3.5 py-3">
           <div className="min-w-0">
-            <p className="truncate text-xs font-semibold text-brand-900">{top.groupLabel}</p>
-            <p className="text-[10px] text-neutral-400">Highest attrition group</p>
+            <p className="truncate text-xs font-semibold text-ink-900">{top.groupLabel}</p>
+            <p className="text-xs text-neutral-400">Highest attrition group</p>
           </div>
           <span className={cx("num shrink-0 text-lg font-bold font-display", SEVERITY_TEXT[severity(top.attritionRate)])}>
             {fmt(top.attritionRate)}%
@@ -528,7 +532,7 @@ function RankedBarList({
               <div className="mb-2 flex items-baseline justify-between gap-3">
                 <span
                   className={cx(
-                    "truncate font-medium text-brand-900 group-hover:text-brand-700",
+                    "truncate font-medium text-ink-900 group-hover:text-brand-700",
                     compact ? "text-xs" : "text-sm"
                   )}
                 >

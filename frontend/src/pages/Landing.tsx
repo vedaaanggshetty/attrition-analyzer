@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Hero } from "../components/landing/Hero";
-import { FeatureCards } from "../components/landing/FeatureCards";
 import { BentoFeatures } from "../components/landing/BentoFeatures";
 import { AnalyticsShowcase } from "../components/landing/AnalyticsShowcase";
 import { NotificationsPreview } from "../components/landing/NotificationsPreview";
@@ -22,7 +21,6 @@ export function Landing() {
   return (
     <>
       <Hero />
-      <FeatureCards />
       <BentoFeatures />
       <AnalyticsShowcase />
       <NotificationsPreview />

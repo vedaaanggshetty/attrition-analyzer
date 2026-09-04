@@ -7,7 +7,7 @@
 // about scoring individual employees. It's been removed; use the employee's
 // actual `attrition` field ("Yes"/"No") wherever a signal is needed.
 
-const AVATAR_COLORS = ["bg-brand-900", "bg-brand-500", "bg-blue-800", "bg-sky-700", "bg-blue-950"];
+const AVATAR_COLORS = ["bg-brand-900", "bg-brand-700", "bg-brand-500", "bg-neutral-600", "bg-neutral-800"];
 
 function hashString(id: string): number {
   let hash = 0;

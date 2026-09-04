@@ -80,7 +80,7 @@ export function Profile() {
         <div className="flex items-center gap-4">
           <Avatar firstName={profile.fullName.split(" ")[0]} lastName={profile.fullName.split(" ")[1] ?? ""} size="lg" />
           <div>
-            <h2 className="font-serif text-xl font-semibold text-brand-900">{profile.fullName}</h2>
+            <h2 className="font-serif text-xl font-semibold text-ink-900">{profile.fullName}</h2>
             <p className="text-sm text-neutral-500">{profile.email}</p>
           </div>
         </div>
@@ -137,7 +137,7 @@ export function Profile() {
       </Card>
 
       <Card className="mt-5 p-6 sm:p-8">
-        <h2 className="font-serif text-lg font-semibold text-brand-900">Account</h2>
+        <h2 className="font-serif text-lg font-semibold text-ink-900">Account</h2>
         <dl className="mt-5 flex flex-col gap-4 text-sm">
           <div className="flex items-center justify-between border-b border-brand-900/8 pb-4">
             <dt className="text-neutral-500">User ID</dt>
@@ -145,11 +145,11 @@ export function Profile() {
           </div>
           <div className="flex items-center justify-between border-b border-brand-900/8 pb-4">
             <dt className="text-neutral-500">Member since</dt>
-            <dd className="font-medium text-brand-900">{formatDate(profile.createdAt)}</dd>
+            <dd className="font-medium text-ink-900">{formatDate(profile.createdAt)}</dd>
           </div>
           <div className="flex items-center justify-between">
             <dt className="text-neutral-500">Access level</dt>
-            <dd className="font-medium text-brand-900">{user?.role ?? "HR User"}</dd>
+            <dd className="font-medium text-ink-900">{user?.role ?? "HR User"}</dd>
           </div>
         </dl>
       </Card>
@@ -175,7 +175,7 @@ function TextField({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange?.(e.target.value)}
-        className="rounded-xl border border-brand-900/12 bg-white px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-900/40 disabled:cursor-not-allowed disabled:bg-brand-50/50 disabled:text-neutral-500"
+        className="shadow-control rounded-xl border border-brand-900/12 bg-white px-4 py-2.5 text-sm text-ink-900 outline-none transition-all duration-200 hover:border-brand-900/20 focus:border-brand-900/40 focus:shadow-surface disabled:cursor-not-allowed disabled:bg-brand-50/50 disabled:text-neutral-500 disabled:shadow-none"
       />
     </label>
   );

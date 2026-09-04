@@ -31,7 +31,7 @@ const JOB_ROLES: Record<string, string[]> = {
 const STATES = ["CA", "NY", "TX", "IL", "WA", "MA", "CO", "GA"];
 const EDUCATION_FIELDS = ["Marketing", "Computer Science", "Business", "Human Resources", "Finance", "Design"];
 const MARITAL_STATUS = ["Single", "Married", "Divorced"];
-const AVATAR_COLORS = ["bg-brand-900", "bg-brand-500", "bg-blue-800", "bg-sky-700", "bg-blue-950"];
+const AVATAR_COLORS = ["bg-brand-900", "bg-brand-700", "bg-brand-500", "bg-neutral-600", "bg-neutral-800"];
 
 function seededRandom(seed: number) {
   let value = seed;

@@ -14,7 +14,7 @@ export function NotificationsPreview() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-400">
             Flagged &amp; tracked
           </p>
-          <h2 className="font-serif text-4xl font-semibold tracking-tight text-brand-900 sm:text-5xl">
+          <h2 className="font-serif text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">
             Flag a flight risk. Never lose the thread.
           </h2>
           <p className="mt-4 max-w-md text-base leading-relaxed text-neutral-500">
@@ -33,7 +33,7 @@ export function NotificationsPreview() {
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
-                  <p className="truncate text-sm font-semibold text-brand-900">{note.employeeName}</p>
+                  <p className="truncate text-sm font-semibold text-ink-900">{note.employeeName}</p>
                   <span className="shrink-0 text-xs text-neutral-400">{formatRelativeTime(note.createdAt)}</span>
                 </div>
                 <p className="mt-1 text-xs font-medium text-neutral-400">{note.department}</p>

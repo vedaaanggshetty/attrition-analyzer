@@ -8,8 +8,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANT_STYLES: Record<NonNullable<ButtonProps["variant"]>, string> = {
   primary:
-    "bg-brand-900 text-white hover:bg-brand-500 hover:-translate-y-px hover:shadow-[0_4px_20px_rgba(33,150,243,0.35)] active:scale-[0.98]",
-  secondary: "bg-white text-brand-900 border border-brand-900/15 hover:border-brand-900/40",
+    "bg-brand-900 text-white hover:bg-brand-700 hover:-translate-y-px hover:shadow-[0_4px_20px_rgba(0,0,0,0.35)] active:scale-[0.98]",
+  secondary: "shadow-control bg-white text-brand-900 border border-brand-900/15 hover:border-brand-900/40 hover:shadow-surface",
   ghost: "text-brand-900 hover:bg-brand-50",
 };
 

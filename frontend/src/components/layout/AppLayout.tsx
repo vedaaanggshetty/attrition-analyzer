@@ -55,7 +55,7 @@ export function AppLayout() {
               <div className="flex items-center gap-3 rounded-xl border border-brand-900/10 bg-brand-50/60 p-2.5">
                 <Avatar firstName={displayName} lastName="" size="sm" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-brand-900">{displayName}</p>
+                  <p className="truncate text-sm font-semibold text-ink-900">{displayName}</p>
                   <p className="truncate text-xs text-neutral-500">{user?.role ?? "HR User"}</p>
                 </div>
                 <button
@@ -75,7 +75,10 @@ export function AppLayout() {
         </Sidebar>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <main className="flex-1 overflow-y-auto px-5 py-8 lg:px-8 lg:py-10">
+          {/* Reuses the landing page's dot-grid background language, at a
+              near-invisible opacity - purely decorative, strictly behind
+              content, never a dark-mode change. */}
+          <main className="bg-dot-grid relative flex-1 overflow-y-auto px-5 py-8 lg:px-8 lg:py-10">
             <Outlet />
           </main>
         </div>

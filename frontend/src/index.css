@@ -5,17 +5,29 @@
   --font-display: "Inter Tight", system-ui, sans-serif;
   --font-serif: "Source Serif 4", Georgia, serif;
 
-  /* https://colorhunt.co/palette/e3f2fd90caf92196f30d47a1 */
-  --color-brand-50: #e3f2fd;
-  --color-brand-300: #90caf9;
-  --color-brand-500: #2196f3;
-  --color-brand-900: #0d47a1;
+  /* Monochrome brand scale - black/near-black instead of blue. Color still
+     signals meaning elsewhere (red/amber for actual attrition severity),
+     it's just no longer the brand hue. */
+  --color-brand-50: #f2f2f3;
+  --color-brand-300: #b8bac0;
+  --color-brand-500: #55575c;
+  --color-brand-600: #3a3c40;
+  --color-brand-700: #2a2c2f;
+  --color-brand-800: #18191b;
+  --color-brand-900: #0a0a0a;
+
+  /* Near-black ink - the default color for headings and body copy site-wide.
+     Same value as body's base text color, so anything left uncolored already
+     matches; text-ink-900 exists for elements that need to explicitly opt
+     back into it (they were overriding to brand-900/blue before). Blue
+     (brand-*) stays reserved for links, active states, CTAs and metrics. */
+  --color-ink-900: #0d1b2e;
 }
 
 :root {
   --muted: #5b6b82;
-  --border-soft: rgba(13, 71, 161, 0.1);
-  --accent-live: #2196f3;
+  --border-soft: rgba(10, 10, 10, 0.1);
+  --accent-live: #0a0a0a;
 }
 
 @layer base {
@@ -176,8 +188,16 @@
 
 /* Sidebar nav active glow */
 .nav-active {
-  background: #f0f0ff;
-  color: #3730a3;
+  background: #f0f0f0;
+  color: #0a0a0a;
+}
+
+/* Extremely subtle decorative dot-grid, reused from the landing page's
+   background visual language on internal (light) pages - near-black dots at
+   very low opacity, strictly behind content. Not a theme change. */
+.bg-dot-grid {
+  background-image: radial-gradient(rgba(13, 20, 33, 0.06) 1px, transparent 1px);
+  background-size: 22px 22px;
 }
 
 /* Tabular number forcing */
@@ -186,21 +206,39 @@
   font-feature-settings: "tnum";
 }
 
+/* Centralized depth tokens - subtle, not glowing. Reuse these instead of
+   ad-hoc shadow values so every card/input/dropdown reads as one system. */
+.shadow-surface {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 20px -14px rgba(13, 23, 42, 0.16);
+}
+
+.shadow-surface-hover {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 14px 28px -14px rgba(13, 23, 42, 0.22);
+}
+
+.shadow-control {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.shadow-dropdown {
+  box-shadow: 0 4px 6px -2px rgba(15, 23, 42, 0.04), 0 16px 32px -12px rgba(13, 23, 42, 0.22);
+}
+
 /* Glassmorphism surface for premium dashboard cards */
 .glass-card {
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid rgba(13, 71, 161, 0.08);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 12px 32px -16px rgba(13, 71, 161, 0.12);
+  border: 1px solid rgba(10, 10, 10, 0.08);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 12px 32px -16px rgba(10, 10, 10, 0.12);
 }
 
 .glass-card-dark {
-  background: linear-gradient(165deg, rgba(13, 40, 90, 0.96), rgba(9, 25, 58, 0.98));
+  background: linear-gradient(165deg, rgba(20, 20, 22, 0.96), rgba(8, 8, 9, 0.98));
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 20px 40px -20px rgba(9, 25, 58, 0.5);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 20px 40px -20px rgba(0, 0, 0, 0.5);
 }
 
 /* Data bar */
