@@ -39,9 +39,15 @@ export function Hero() {
           so you can act on flight risk weeks before it becomes an exit interview.
         </p>
         <div data-reveal className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link to="/register">
-            <Button size="lg">Get Started</Button>
-          </Link>
+          {isAuthenticated ? (
+            <Link to="/dashboard">
+              <Button size="lg">Go to Dashboard</Button>
+            </Link>
+          ) : (
+            <Link to="/register">
+              <Button size="lg">Get Started</Button>
+            </Link>
+          )}
           <Link to={analyticsHref}>
             <Button variant="secondary" size="lg">
               View Analytics

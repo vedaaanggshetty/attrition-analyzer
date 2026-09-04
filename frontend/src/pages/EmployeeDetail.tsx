@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { motion, MotionConfig } from "framer-motion";
 import { getEmployeeById, flagEmployee, type Employee } from "../lib/employeeApi";
 import { getMyNotifications, type Notification } from "../lib/notificationApi";
-import { avatarColorFor } from "../lib/employeeDisplay";
+import { avatarColorFor, salaryBandLabel, promotionBandLabel } from "../lib/employeeDisplay";
 import { useAuth } from "../context/AuthContext";
 import { getErrorMessage } from "../lib/apiClient";
 import { formatCurrency, formatDate, formatRelativeTime } from "../lib/utils";
@@ -12,20 +12,6 @@ import { AttritionBadge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Skeleton } from "../components/ui/Skeleton";
-
-// Same bucketing the backend uses for US-13/US-16 (see EmployeeService),
-// mirrored here only so the contextual links below can name the exact group
-// this employee falls into - the actual attrition numbers always come from
-// the six /employees/analysis/* endpoints, never computed here.
-function salaryBandLabel(salary: number): string {
-  const start = Math.floor(salary / 50000) * 50000;
-  return `$${start}-$${start + 49999}`;
-}
-function promotionBandLabel(years: number): string {
-  if (years <= 2) return "0-2 years";
-  if (years <= 5) return "3-5 years";
-  return "6+ years";
-}
 
 export function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
@@ -137,18 +123,26 @@ export function EmployeeDetail() {
   }
 
   // The six actual US-11–US-16 groupings this employee belongs to, linking
-  // straight to that ranked analysis on the dashboard - not a score, just
-  // "here's the real breakdown this record is part of."
+  // straight into the Attrition Explorer pre-filtered to that group - not a
+  // score, just "here are the real peers this record shares a dimension with."
   const contextLinks = [
-    { label: "Department", value: employee.department, anchor: "department" },
-    { label: "Job Role", value: employee.jobRole, anchor: "job-role" },
-    { label: "Compensation", value: salaryBandLabel(employee.salary), anchor: "compensation" },
-    { label: "Demographics", value: employee.gender, anchor: "demographics" },
-    { label: "Work-Life Balance", value: `Overtime: ${employee.overTime}`, anchor: "work-life-balance" },
+    { label: "Department", value: employee.department, query: `department=${encodeURIComponent(employee.department)}` },
+    { label: "Job Role", value: employee.jobRole, query: `jobRole=${encodeURIComponent(employee.jobRole)}` },
+    {
+      label: "Compensation",
+      value: salaryBandLabel(employee.salary),
+      query: `compensationBand=${encodeURIComponent(salaryBandLabel(employee.salary))}`,
+    },
+    { label: "Demographics", value: employee.gender, query: `gender=${encodeURIComponent(employee.gender)}` },
+    {
+      label: "Work-Life Balance",
+      value: `Overtime: ${employee.overTime}`,
+      query: `overTime=${employee.overTime}`,
+    },
     {
       label: "Career Progression",
       value: promotionBandLabel(employee.yearsSinceLastPromotion),
-      anchor: "career-progression",
+      query: `promotionBand=${encodeURIComponent(promotionBandLabel(employee.yearsSinceLastPromotion))}`,
     },
   ];
 
@@ -246,13 +240,13 @@ export function EmployeeDetail() {
             <section className="bg-neutral-50 rounded-2xl p-6 border border-brand-900/5">
               <h3 className="font-display text-lg font-semibold text-brand-900 mb-1">Attrition Analysis</h3>
               <p className="text-sm text-neutral-500 mb-5">
-                Where this employee falls in each of the six attrition breakdowns.
+                Where this employee falls across the six attrition dimensions (US-11–US-16).
               </p>
               <div className="flex flex-col divide-y divide-brand-900/8">
                 {contextLinks.map((link) => (
                   <Link
-                    key={link.anchor}
-                    to={`/dashboard#${link.anchor}`}
+                    key={link.label}
+                    to={`/employees?${link.query}`}
                     className="group flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
                   >
                     <div className="min-w-0">
@@ -262,48 +256,52 @@ export function EmployeeDetail() {
                       <p className="truncate text-sm font-medium text-brand-900">{link.value}</p>
                     </div>
                     <span className="shrink-0 text-xs font-semibold text-brand-500 opacity-0 transition-opacity group-hover:opacity-100">
-                      View &rarr;
+                      View group &rarr;
                     </span>
                   </Link>
                 ))}
               </div>
             </section>
 
-            <section className="bg-white rounded-2xl p-6 border border-brand-900/10 shadow-sm">
-              <h3 className="font-display text-lg font-semibold text-brand-900 mb-2">Flag Employee</h3>
-              <p className="text-sm text-neutral-500 mb-6">
-                Note a concern for the HR team. It'll show up in Notifications for everyone to see.
-              </p>
+            {user?.role !== "Guest" && (
+              <section className="bg-white rounded-2xl p-6 border border-brand-900/10 shadow-sm">
+                <h3 className="font-display text-lg font-semibold text-brand-900 mb-2">Send Notification</h3>
+                <p className="text-sm text-neutral-500 mb-6">
+                  Write a note for the HR team about this employee. It'll appear in Notifications for every HR user.
+                </p>
 
-              <form onSubmit={handleFlag} className="flex flex-col gap-3">
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="e.g. Requested a compensation review after a competing offer"
-                  maxLength={1000}
-                  rows={3}
-                  className="w-full resize-none rounded-lg border border-brand-900/10 bg-neutral-50 p-3 text-sm outline-none transition-colors placeholder:text-neutral-400 focus:border-brand-900 focus:bg-white"
-                />
-                <Button type="submit" disabled={!comment.trim() || flagging} className="w-full">
-                  {flagging ? "Flagging..." : "Flag Employee"}
-                </Button>
-              </form>
+                <form onSubmit={handleFlag} className="flex flex-col gap-3">
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="e.g. Requested a compensation review after a competing offer"
+                    maxLength={1000}
+                    rows={3}
+                    className="w-full resize-none rounded-lg border border-brand-900/10 bg-neutral-50 p-3 text-sm outline-none transition-colors placeholder:text-neutral-400 focus:border-brand-900 focus:bg-white"
+                  />
+                  <Button type="submit" disabled={!comment.trim() || flagging} className="w-full">
+                    {flagging ? "Sending..." : "Send Notification"}
+                  </Button>
+                </form>
 
-              {flagged && <p className="mt-3 text-sm font-medium text-emerald-600 text-center">Employee flagged.</p>}
-              {flagError && <p className="mt-3 text-sm font-medium text-red-600 text-center">{flagError}</p>}
-            </section>
+                {flagged && <p className="mt-3 text-sm font-medium text-emerald-600 text-center">Notification sent.</p>}
+                {flagError && <p className="mt-3 text-sm font-medium text-red-600 text-center">{flagError}</p>}
+              </section>
+            )}
 
             <section>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-4">Notes</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-4">Notifications</h3>
               {notes.length === 0 ? (
-                <p className="text-sm text-neutral-400">Flag this employee to start a record here.</p>
+                <p className="text-sm text-neutral-400">Send a notification to start a record here.</p>
               ) : (
                 <div className="flex flex-col gap-4">
                   {notes.map((note) => (
                     <div key={note.id} className="relative pl-4 border-l border-brand-900/10 pb-4 last:pb-0">
                       <div className="absolute w-2 h-2 bg-neutral-200 rounded-full -left-[4.5px] top-1.5"></div>
                       <div className="flex items-baseline justify-between gap-2 mb-1">
-                        <span className="text-xs font-semibold text-brand-900">{user?.email ?? "HR"}</span>
+                        <span className="text-xs font-semibold text-brand-900">
+                          Sent by {user?.fullName ?? user?.email ?? "you"}
+                        </span>
                         <span className="text-[10px] text-neutral-400 uppercase tracking-wide">
                           {formatRelativeTime(note.createdAt)}
                         </span>

@@ -91,13 +91,25 @@ export function Dashboard() {
   const topGroups = useMemo(() => {
     if (!analysis) return null;
     return [
-      { label: "Department", anchor: "department", row: analysis.department[0] },
-      { label: "Job Role", anchor: "job-role", row: analysis.jobRole[0] },
-      { label: "Compensation", anchor: "compensation", row: analysis.compensation[0] },
-      { label: "Demographics", anchor: "demographics", row: analysis.demographics[0] },
-      { label: "Work-Life Balance", anchor: "work-life-balance", row: analysis.workLifeBalance[0] },
-      { label: "Career Progression", anchor: "career-progression", row: analysis.careerProgression[0] },
-    ].filter((g): g is { label: string; anchor: string; row: AttritionAnalysis } => g.row !== undefined);
+      { label: "Department", anchor: "department", queryKey: "department", row: analysis.department[0] },
+      { label: "Job Role", anchor: "job-role", queryKey: "jobRole", row: analysis.jobRole[0] },
+      { label: "Compensation", anchor: "compensation", queryKey: "compensationBand", row: analysis.compensation[0] },
+      { label: "Demographics", anchor: "demographics", queryKey: "gender", row: analysis.demographics[0] },
+      {
+        label: "Work-Life Balance",
+        anchor: "work-life-balance",
+        queryKey: "overTime",
+        row: analysis.workLifeBalance[0],
+      },
+      {
+        label: "Career Progression",
+        anchor: "career-progression",
+        queryKey: "promotionBand",
+        row: analysis.careerProgression[0],
+      },
+    ].filter(
+      (g): g is { label: string; anchor: string; queryKey: string; row: AttritionAnalysis } => g.row !== undefined
+    );
   }, [analysis]);
 
   async function handleDeleteNotification(id: number) {
@@ -137,7 +149,7 @@ export function Dashboard() {
         />
         <div className="hidden lg:block" /> {/* divider */}
         <PrimaryMetric
-          label="Highest-Risk Department"
+          label="Top Department by Attrition"
           value={topGroups ? topGroups.find((g) => g.anchor === "department")?.row.groupLabel ?? "—" : null}
           sub={
             topGroups
@@ -219,9 +231,9 @@ export function Dashboard() {
           ) : (
             <div className="flex flex-col divide-y divide-brand-900/6">
               {topGroups.map((g) => (
-                <a
+                <Link
                   key={g.anchor}
-                  href={`#${g.anchor}`}
+                  to={`/employees?${g.queryKey}=${encodeURIComponent(g.row.groupLabel)}`}
                   className="group flex items-center justify-between gap-3 py-3 hover:bg-brand-50 -mx-2 px-2 rounded-lg transition-colors"
                 >
                   <div className="min-w-0">
@@ -232,7 +244,7 @@ export function Dashboard() {
                     <span className="num text-sm font-semibold text-red-600">{fmt(g.row.attritionRate)}%</span>
                     <ChevronIcon className="h-3.5 w-3.5 text-brand-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                </a>
+                </Link>
               ))}
             </div>
           )}
@@ -240,12 +252,17 @@ export function Dashboard() {
 
         {/* Activity feed */}
         <div>
-          <SectionLabel>Recent Activity</SectionLabel>
-          <p className="mt-1 mb-6 text-sm text-brand-500">HR flags and context notes</p>
+          <div className="flex items-baseline justify-between">
+            <SectionLabel>Recent Notifications</SectionLabel>
+            <Link to="/notifications" className="text-xs font-semibold text-brand-300 hover:text-brand-900 transition-colors">
+              View all →
+            </Link>
+          </div>
+          <p className="mt-1 mb-6 text-sm text-brand-500">Notes sent to the HR team</p>
           {!notifications ? (
             <ActivitySkeleton />
           ) : notifications.length === 0 ? (
-            <p className="text-sm text-brand-500">No activity yet. Flag an employee to start a record.</p>
+            <p className="text-sm text-brand-500">No notifications yet. Send one from an employee's detail page.</p>
           ) : (
             <div className="flex flex-col gap-4">
               {notifications.slice(0, 5).map((note) => (
@@ -302,7 +319,7 @@ function PageTitle({ name }: { name: string }) {
         to="/employees"
         className="hidden text-xs font-semibold text-brand-300 underline underline-offset-4 hover:text-brand-900 transition-colors sm:block"
       >
-        View all employees →
+        Open Attrition Explorer →
       </Link>
     </div>
   );

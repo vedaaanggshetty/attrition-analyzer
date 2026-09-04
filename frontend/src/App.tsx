@@ -9,6 +9,7 @@ import { About } from "./pages/About";
 import { Dashboard } from "./pages/Dashboard";
 import { EmployeeList } from "./pages/EmployeeList";
 import { EmployeeDetail } from "./pages/EmployeeDetail";
+import { Notifications } from "./pages/Notifications";
 import { Profile } from "./pages/Profile";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/employees" element={<EmployeeList />} />
             <Route path="/employees/:id" element={<EmployeeDetail />} />
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
         </Route>

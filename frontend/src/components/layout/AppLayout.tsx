@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { cx } from "../../lib/utils";
 import { useAuth } from "../../context/AuthContext";
@@ -8,11 +8,18 @@ import { Wordmark } from "../ui/Wordmark";
 const NAV_ITEMS = [
   { label: "Analytics", to: "/dashboard", icon: GridIcon },
   { label: "Employees", to: "/employees", icon: UsersIcon },
+  { label: "Notifications", to: "/notifications", icon: BellIcon },
   { label: "Profile", to: "/profile", icon: UserIcon },
 ];
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Desktop only: scroll down hides the sidebar, scroll up (or a small edge
+  // glider) reveals it again - the mobile drawer above is unaffected.
+  const [collapsed, setCollapsed] = useState(false);
+  const lastScrollTop = useRef(0);
+  const mainRef = useRef<HTMLElement>(null);
+
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const displayName = user?.fullName ?? user?.email.split("@")[0] ?? "HR User";
@@ -21,6 +28,26 @@ export function AppLayout() {
     logout();
     navigate("/login", { replace: true });
   }
+
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    function onScroll() {
+      if (!el) return;
+      const top = el.scrollTop;
+      const delta = top - lastScrollTop.current;
+      if (top < 32) {
+        setCollapsed(false);
+      } else if (delta > 8) {
+        setCollapsed(true);
+      } else if (delta < -8) {
+        setCollapsed(false);
+      }
+      lastScrollTop.current = top;
+    }
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <div className="h-screen overflow-hidden bg-neutral-100">
@@ -37,7 +64,8 @@ export function AppLayout() {
         <aside
           className={cx(
             "fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col overflow-y-auto border-r border-brand-900/10 bg-white px-5 py-6 transition-transform duration-300 lg:static lg:translate-x-0",
-            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+            sidebarOpen ? "translate-x-0" : "-translate-x-full",
+            collapsed && "lg:-translate-x-full"
           )}
         >
           <Link to="/" className="px-2">
@@ -82,6 +110,20 @@ export function AppLayout() {
           </div>
         </aside>
 
+        {/* Edge glider: only visible once the sidebar is scroll-collapsed on
+            desktop, so there's always a way back in without a full scroll-up. */}
+        <button
+          type="button"
+          aria-label="Show sidebar"
+          onClick={() => setCollapsed(false)}
+          className={cx(
+            "fixed left-0 top-1/2 z-40 hidden -translate-y-1/2 items-center rounded-r-full border border-l-0 border-brand-900/10 bg-white py-3 pl-1 pr-2 text-neutral-400 shadow-sm transition-all duration-300 hover:text-brand-900 lg:flex",
+            collapsed ? "opacity-100" : "pointer-events-none -translate-x-4 opacity-0"
+          )}
+        >
+          <ChevronRightIcon className="h-4 w-4" />
+        </button>
+
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex h-16 shrink-0 items-center gap-4 border-b border-brand-900/10 bg-white/80 px-5 backdrop-blur-xl lg:px-8">
             <button
@@ -96,8 +138,9 @@ export function AppLayout() {
               &larr; Back to site
             </Link>
           </header>
-          {/* Only this pane scrolls - the sidebar and header stay put. */}
-          <main className="flex-1 overflow-y-auto px-5 py-8 lg:px-8 lg:py-10">
+          {/* Only this pane scrolls - the sidebar and header stay put; scroll
+              position here drives the collapse/reveal behavior above. */}
+          <main ref={mainRef} className="flex-1 overflow-y-auto px-5 py-8 lg:px-8 lg:py-10">
             <Outlet />
           </main>
         </div>
@@ -126,6 +169,14 @@ function UsersIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function BellIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" {...props}>
+      <path d="M6 8a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9.5 20a2.5 2.5 0 0 0 5 0" strokeLinecap="round" />
+    </svg>
+  );
+}
 function UserIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" {...props}>
@@ -146,6 +197,13 @@ function MenuIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" {...props}>
       <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
+    </svg>
+  );
+}
+function ChevronRightIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

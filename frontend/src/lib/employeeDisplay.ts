@@ -22,6 +22,23 @@ export function avatarColorFor(id: string): string {
   return AVATAR_COLORS[hashString(id) % AVATAR_COLORS.length];
 }
 
+// Same bucketing the backend uses for US-13/US-16 (see EmployeeService) -
+// used only for display/filter labels; actual attrition rates always come
+// from the six /employees/analysis/* endpoints, never computed here.
+export function salaryBandLabel(salary: number): string {
+  const start = Math.floor(salary / 50000) * 50000;
+  return `$${start.toLocaleString()}-$${(start + 49999).toLocaleString()}`;
+}
+
+export const PROMOTION_BANDS = ["0-2 years", "3-5 years", "6+ years"] as const;
+export type PromotionBand = (typeof PROMOTION_BANDS)[number];
+
+export function promotionBandLabel(years: number): PromotionBand {
+  if (years <= 2) return "0-2 years";
+  if (years <= 5) return "3-5 years";
+  return "6+ years";
+}
+
 const DEPARTMENT_CHIP_STYLES = [
   "bg-brand-50 text-brand-700",
   "bg-violet-50 text-violet-700",
