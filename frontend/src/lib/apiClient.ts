@@ -80,3 +80,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   return data as T;
 }
+
+/** The message to show the user for a failed request - the backend's own
+ * message when we have one, otherwise a generic fallback. */
+export function getErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof ApiError ? err.message : fallback;
+}

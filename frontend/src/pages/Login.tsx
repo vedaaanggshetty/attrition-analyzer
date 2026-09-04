@@ -4,7 +4,7 @@ import { AuthLayout } from "../components/layout/AuthLayout";
 import { FormField } from "../components/ui/FormField";
 import { Button } from "../components/ui/Button";
 import { useAuth } from "../context/AuthContext";
-import { ApiError } from "../lib/apiClient";
+import { getErrorMessage } from "../lib/apiClient";
 
 interface Errors {
   email?: string;
@@ -41,7 +41,7 @@ export function Login() {
       const from = (location.state as { from?: Location })?.from?.pathname ?? "/dashboard";
       navigate(from, { replace: true });
     } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : "Something went wrong. Try again.");
+      setFormError(getErrorMessage(err, "Something went wrong. Try again."));
     } finally {
       setSubmitting(false);
     }

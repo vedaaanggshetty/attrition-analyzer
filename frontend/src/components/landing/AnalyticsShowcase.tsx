@@ -4,7 +4,7 @@ import { useReveal } from "../../hooks/useReveal";
 import { useParallax } from "../../hooks/useParallax";
 import { Card } from "../ui/Card";
 import { BarList } from "../ui/BarList";
-import { Skeleton } from "../ui/Skeleton";
+import { SkeletonRows } from "../ui/SkeletonRows";
 
 // US-21: Guests can view this section without logging in - it only calls
 // the two /employees/analysis/** routes the Gateway permits without a JWT,
@@ -49,15 +49,7 @@ export function AnalyticsShowcase() {
               <h3 className="font-display text-lg font-semibold text-brand-900">Attrition by Department</h3>
               <p className="mt-1 text-sm text-neutral-500">Highest-risk departments, ranked</p>
               <div className="mt-6">
-                {department ? (
-                  <BarList data={department.slice(0, 6)} />
-                ) : (
-                  <div className="flex flex-col gap-4">
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <Skeleton key={i} className="h-6 w-full" />
-                    ))}
-                  </div>
-                )}
+                {department ? <BarList data={department.slice(0, 6)} /> : <SkeletonRows count={5} />}
               </div>
             </div>
           </Card>
@@ -65,15 +57,7 @@ export function AnalyticsShowcase() {
             <h3 className="font-display text-lg font-semibold text-brand-900">Attrition by Job Role</h3>
             <p className="mt-1 text-sm text-neutral-500">Where turnover concentrates</p>
             <div className="mt-6">
-              {jobRole ? (
-                <BarList data={jobRole.slice(0, 6)} />
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {Array.from({ length: 5 }, (_, i) => (
-                    <Skeleton key={i} className="h-6 w-full" />
-                  ))}
-                </div>
-              )}
+              {jobRole ? <BarList data={jobRole.slice(0, 6)} /> : <SkeletonRows count={5} />}
             </div>
           </Card>
         </div>

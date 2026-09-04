@@ -1,19 +1,11 @@
-import type { Employee } from "./employeeApi";
-import type { AttritionRisk } from "../types";
-
-// Employee Service doesn't expose a risk score, so this derives one
-// client-side from the same signals HR already sees on the record (overtime,
-// years since promotion, compensation). Deterministic - no randomness - so
-// the same employee always shows the same risk badge.
-export function attritionRisk(employee: Pick<Employee, "overTime" | "yearsSinceLastPromotion" | "salary">): AttritionRisk {
-  const score =
-    (employee.overTime === "Yes" ? 0.35 : 0) +
-    (employee.yearsSinceLastPromotion > 5 ? 0.25 : 0) +
-    (employee.salary < 55000 ? 0.25 : 0);
-  if (score > 0.55) return "High";
-  if (score > 0.3) return "Medium";
-  return "Low";
-}
+// NOTE: this file previously included an `attritionRisk()` / `riskReasonFor()`
+// pair that computed a client-side "risk score" (Low/Medium/High) from
+// overtime, years-since-promotion, and salary. That score was never part of
+// the product backlog - US-11 through US-16 are about grouping and comparing
+// attrition rates across six real dimensions (department, job role,
+// compensation band, gender, overtime, years-since-promotion band), not
+// about scoring individual employees. It's been removed; use the employee's
+// actual `attrition` field ("Yes"/"No") wherever a signal is needed.
 
 const AVATAR_COLORS = ["bg-brand-900", "bg-brand-500", "bg-blue-800", "bg-sky-700", "bg-blue-950"];
 

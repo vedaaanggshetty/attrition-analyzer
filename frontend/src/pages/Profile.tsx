@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { formatDate } from "../lib/utils";
-import { ApiError } from "../lib/apiClient";
+import { getErrorMessage } from "../lib/apiClient";
 import { getMyProfile, updateMyProfile, type ProfileResponse } from "../lib/authApi";
 import { useAuth } from "../context/AuthContext";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -26,7 +26,7 @@ export function Profile() {
         setProfile(data);
         setForm({ fullName: data.fullName, phone: data.phone });
       })
-      .catch((err) => setLoadError(err instanceof ApiError ? err.message : "Couldn't load your profile."));
+      .catch((err) => setLoadError(getErrorMessage(err, "Couldn't load your profile.")));
   }, []);
 
   async function handleSave(e: React.FormEvent) {
@@ -40,7 +40,7 @@ export function Profile() {
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      setSaveError(err instanceof ApiError ? err.message : "Couldn't save your changes.");
+      setSaveError(getErrorMessage(err, "Couldn't save your changes."));
     } finally {
       setSaving(false);
     }

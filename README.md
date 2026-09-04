@@ -10,7 +10,7 @@ Employee data is not stored by this application — it is retrieved live from an
 
 ## Table of Contents
 
-1. [Project Overview](#project-overview)
+<!-- 1. [Project Overview](#project-overview) -->
 2. [Features / User Stories (US-01–US-21)](#features--user-stories-us-01us-21)
 3. [System Architecture](#system-architecture)
 4. [Technology Stack](#technology-stack)
@@ -42,7 +42,7 @@ There are exactly two user types:
 - **HR User** — full access: employee directory, search, employee details, all six attrition analyses, flagging employees, and notifications.
 
 ---
-
+<!-- 
 ## Features / User Stories (US-01–US-21)
 
 Per the finalized 21-story product backlog (`docs/Attrition_Analyzer_Product_Backlog_Corrected.xlsx`), grouped by epic. Status reflects the **actual current implementation**, verified against the code.
@@ -95,7 +95,7 @@ A direct `POST /notifications` endpoint also exists on Notification Service (byp
 |---|---|---|---|
 | US-21 | Explore Attrition Info as Guest | ✅ Implemented | Gateway `permitAll`s `GET /employees/analysis/**` only; `/employees`, `/employees/{id}`, and `/notifications/**` all require a JWT. The public landing page shows department + job-role attrition without login |
 
----
+--- -->
 
 ## System Architecture
 

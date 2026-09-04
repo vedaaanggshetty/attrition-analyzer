@@ -1,18 +1,5 @@
 import type { HTMLAttributes } from "react";
 import { cx } from "../../lib/utils";
-import type { AttritionRisk } from "../../types";
-
-const RISK_STYLES: Record<AttritionRisk, string> = {
-  Low: "bg-brand-50 text-brand-900",
-  Medium: "bg-amber-100 text-amber-700",
-  High: "bg-red-100 text-red-700",
-};
-
-const RISK_DOT_STYLES: Record<AttritionRisk, string> = {
-  Low: "bg-brand-500",
-  Medium: "bg-amber-500",
-  High: "bg-red-500",
-};
 
 export function Badge({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
   return (
@@ -26,11 +13,21 @@ export function Badge({ className, ...props }: HTMLAttributes<HTMLSpanElement>) 
   );
 }
 
-export function RiskBadge({ risk }: { risk: AttritionRisk }) {
-  return (
-    <Badge className={cx("gap-1.5", RISK_STYLES[risk])}>
-      <span className={cx("h-1.5 w-1.5 rounded-full", RISK_DOT_STYLES[risk])} />
-      {risk} risk
+/**
+ * Reflects the employee's actual `attrition` field from the Survey API
+ * ("Yes"/"No") - not a derived score. This is the same value US-11–US-16
+ * aggregate over on the backend (attritionCount / totalEmployees per group).
+ */
+export function AttritionBadge({ attrition }: { attrition: "Yes" | "No" }) {
+  return attrition === "Yes" ? (
+    <Badge className="gap-1.5 bg-red-100 text-red-700">
+      <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+      Attrition: Yes
+    </Badge>
+  ) : (
+    <Badge className="gap-1.5 bg-neutral-100 text-neutral-600">
+      <span className="h-1.5 w-1.5 rounded-full bg-neutral-400" />
+      Active
     </Badge>
   );
 }

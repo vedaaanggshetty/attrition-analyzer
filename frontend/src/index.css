@@ -34,6 +34,7 @@
 }
 
 @layer utilities {
+
   /* Staggered IntersectionObserver reveal: elements start here, .reveal-visible removes it */
   .reveal {
     opacity: 0;
@@ -100,6 +101,7 @@
   from {
     transform: translateX(0);
   }
+
   to {
     transform: translateX(-50%);
   }
@@ -110,12 +112,15 @@
     opacity: 0;
     transform: scaleY(1);
   }
+
   15% {
     opacity: 0.9;
   }
+
   70% {
     opacity: 0.35;
   }
+
   100% {
     opacity: 0;
     transform: scaleY(0.85);
@@ -123,24 +128,83 @@
 }
 
 @keyframes drift {
+
   0%,
   100% {
     transform: translate(0, 0) scale(1);
   }
+
   33% {
     transform: translate(3%, -4%) scale(1.05);
   }
+
   66% {
     transform: translate(-2%, 3%) scale(0.98);
   }
 }
 
 @keyframes bob {
+
   0%,
   100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-6px);
   }
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Line clamp shorthands */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Section divider */
+.section-rule {
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* Sidebar nav active glow */
+.nav-active {
+  background: #f0f0ff;
+  color: #3730a3;
+}
+
+/* Tabular number forcing */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Data bar */
+.data-bar-track {
+  height: 3px;
+  background: rgba(24, 20, 15, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.data-bar-fill {
+  height: 100%;
+  background: #18140f;
+  border-radius: 999px;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.data-bar-fill.accent {
+  background: #4338ca;
+}
+
+.data-bar-fill.risk {
+  background: #dc2626;
 }
