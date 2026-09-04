@@ -20,7 +20,7 @@ export function AuthLayout({
           <Wordmark dark />
         </Link>
         <div>
-          <p className="font-display text-4xl font-semibold leading-tight tracking-tight xl:text-5xl">
+          <p className="font-serif text-4xl font-semibold italic leading-tight tracking-tight xl:text-5xl">
             Understand your workforce.
             <br />
             Before they leave.
@@ -39,7 +39,7 @@ export function AuthLayout({
         </Link>
 
         <div className="mx-auto w-full max-w-sm">
-          <h1 className="font-display text-3xl font-semibold tracking-tight text-brand-900">{title}</h1>
+          <h1 className="font-serif text-3xl font-semibold italic tracking-tight text-brand-900">{title}</h1>
           <p className="mt-2 text-sm text-neutral-500">{subtitle}</p>
           <div className="mt-8">{children}</div>
           <p className="mt-6 text-center text-sm text-neutral-500">{footer}</p>

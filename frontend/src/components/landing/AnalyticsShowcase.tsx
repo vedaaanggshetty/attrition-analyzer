@@ -27,7 +27,7 @@ export function AnalyticsShowcase() {
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
         <div className="mb-14 max-w-2xl">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-400">Analytics</p>
-          <h2 className="font-display text-4xl font-semibold tracking-tight text-brand-900 sm:text-5xl">
+          <h2 className="font-serif text-4xl font-semibold tracking-tight text-brand-900 sm:text-5xl">
             Attrition, broken down the way HR actually thinks
           </h2>
           <p className="mt-4 text-base text-neutral-500">
@@ -46,7 +46,7 @@ export function AnalyticsShowcase() {
               {department?.[0]?.attritionRate ?? ""}
             </span>
             <div className="relative">
-              <h3 className="font-display text-lg font-semibold text-brand-900">Attrition by Department</h3>
+              <h3 className="font-serif text-lg font-semibold text-brand-900">Attrition by Department</h3>
               <p className="mt-1 text-sm text-neutral-500">Highest-risk departments, ranked</p>
               <div className="mt-6">
                 {department ? <BarList data={department.slice(0, 6)} /> : <SkeletonRows count={5} />}
@@ -54,7 +54,7 @@ export function AnalyticsShowcase() {
             </div>
           </Card>
           <Card className="p-7 lg:col-span-2" data-reveal>
-            <h3 className="font-display text-lg font-semibold text-brand-900">Attrition by Job Role</h3>
+            <h3 className="font-serif text-lg font-semibold text-brand-900">Attrition by Job Role</h3>
             <p className="mt-1 text-sm text-neutral-500">Where turnover concentrates</p>
             <div className="mt-6">
               {jobRole ? <BarList data={jobRole.slice(0, 6)} /> : <SkeletonRows count={5} />}

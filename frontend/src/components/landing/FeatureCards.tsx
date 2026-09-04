@@ -35,8 +35,8 @@ export function FeatureCards() {
       <div className="mb-14 flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
         <div className="max-w-2xl">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-400">Platform</p>
-          <h2 className="font-display text-4xl font-semibold tracking-tight text-brand-900 sm:text-5xl">
-            Three ways to see your <span className="font-serif italic">people</span> clearly
+          <h2 className="font-serif text-4xl font-semibold tracking-tight text-brand-900 sm:text-5xl">
+            Three ways to see your <span className="italic">people</span> clearly
           </h2>
         </div>
         {/* Editorial annotation - deliberately off the grid, hand-set feel */}

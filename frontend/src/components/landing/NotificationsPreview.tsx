@@ -14,7 +14,7 @@ export function NotificationsPreview() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-400">
             Flagged &amp; tracked
           </p>
-          <h2 className="font-display text-4xl font-semibold tracking-tight text-brand-900 sm:text-5xl">
+          <h2 className="font-serif text-4xl font-semibold tracking-tight text-brand-900 sm:text-5xl">
             Flag a flight risk. Never lose the thread.
           </h2>
           <p className="mt-4 max-w-md text-base leading-relaxed text-neutral-500">

@@ -80,7 +80,7 @@ export function Profile() {
         <div className="flex items-center gap-4">
           <Avatar firstName={profile.fullName.split(" ")[0]} lastName={profile.fullName.split(" ")[1] ?? ""} size="lg" />
           <div>
-            <h2 className="font-display text-xl font-semibold text-brand-900">{profile.fullName}</h2>
+            <h2 className="font-serif text-xl font-semibold text-brand-900">{profile.fullName}</h2>
             <p className="text-sm text-neutral-500">{profile.email}</p>
           </div>
         </div>
@@ -137,7 +137,7 @@ export function Profile() {
       </Card>
 
       <Card className="mt-5 p-6 sm:p-8">
-        <h2 className="font-display text-lg font-semibold text-brand-900">Account</h2>
+        <h2 className="font-serif text-lg font-semibold text-brand-900">Account</h2>
         <dl className="mt-5 flex flex-col gap-4 text-sm">
           <div className="flex items-center justify-between border-b border-brand-900/8 pb-4">
             <dt className="text-neutral-500">User ID</dt>

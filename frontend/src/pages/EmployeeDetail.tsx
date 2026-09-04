@@ -173,7 +173,7 @@ export function EmployeeDetail() {
               size="xl"
             />
             <div className="pt-2">
-              <h1 className="font-display text-4xl md:text-5xl font-semibold tracking-tight text-brand-900 mb-2">
+              <h1 className="font-serif text-4xl md:text-5xl font-semibold italic tracking-tight text-brand-900 mb-2">
                 {employee.firstName} {employee.lastName}
               </h1>
               <p className="text-lg text-neutral-600 font-medium">
@@ -238,7 +238,7 @@ export function EmployeeDetail() {
               plus the flag/comment action. */}
           <div className="md:col-span-5 flex flex-col gap-8">
             <section className="bg-neutral-50 rounded-2xl p-6 border border-brand-900/5">
-              <h3 className="font-display text-lg font-semibold text-brand-900 mb-1">Attrition Analysis</h3>
+              <h3 className="font-serif text-lg font-semibold text-brand-900 mb-1">Attrition Analysis</h3>
               <p className="text-sm text-neutral-500 mb-5">
                 Where this employee falls across the six attrition dimensions (US-11–US-16).
               </p>
@@ -265,7 +265,7 @@ export function EmployeeDetail() {
 
             {user?.role !== "Guest" && (
               <section className="bg-white rounded-2xl p-6 border border-brand-900/10 shadow-sm">
-                <h3 className="font-display text-lg font-semibold text-brand-900 mb-2">Send Notification</h3>
+                <h3 className="font-serif text-lg font-semibold text-brand-900 mb-2">Send Notification</h3>
                 <p className="text-sm text-neutral-500 mb-6">
                   Write a note for the HR team about this employee. It'll appear in Notifications for every HR user.
                 </p>
