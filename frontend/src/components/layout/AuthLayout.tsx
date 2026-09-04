@@ -6,13 +6,13 @@ export function AuthLayout({
   title,
   subtitle,
   children,
-  footer,``
+  footer,
 }: {
-    title: string;
-    subtitle: string;
-    children: ReactNode;
-    footer: ReactNode;
-  }) {
+  title: string;
+  subtitle: string;
+  children: ReactNode;
+  footer: ReactNode;
+}) {
   return (
     <div className="flex min-h-screen">
       <div className="hidden w-1/2 flex-col justify-between bg-brand-900 p-12 text-white lg:flex">
