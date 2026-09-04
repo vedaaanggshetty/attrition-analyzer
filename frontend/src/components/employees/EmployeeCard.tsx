@@ -36,21 +36,21 @@ export function EmployeeCard({ employee, featured = false }: { employee: Employe
           </div>
 
           <div className="min-w-0">
-            <p className={cx("truncate font-semibold text-ink-900 mb-1 tracking-tight", featured ? "text-2xl" : "text-lg")}>
+            <p className={cx("truncate font-semibold text-ink-900 mb-1.5 tracking-tight", featured ? "text-3xl" : "text-xl")}>
               {employee.firstName} {employee.lastName}
             </p>
-            <p className="truncate text-sm font-medium text-neutral-500 mb-4">{employee.jobRole}</p>
+            <p className="truncate text-base font-medium text-neutral-500 mb-4">{employee.jobRole}</p>
 
             <div className="flex flex-wrap items-center gap-2">
               <span
                 className={cx(
-                  "inline-flex rounded-md px-2.5 py-1 text-xs font-semibold",
+                  "inline-flex rounded-md px-2.5 py-1 text-sm font-semibold",
                   departmentChipStyleFor(employee.department)
                 )}
               >
                 {employee.department}
               </span>
-              <span className="truncate text-xs font-mono text-neutral-400 border border-brand-900/10 rounded-md px-2 py-0.5">{employee.employeeId}</span>
+              <span className="truncate text-sm font-mono text-neutral-400 border border-brand-900/10 rounded-md px-2 py-0.5">{employee.employeeId}</span>
             </div>
           </div>
 
@@ -65,8 +65,8 @@ export function EmployeeCard({ employee, featured = false }: { employee: Employe
 
         <div className="mt-8 flex items-end justify-between pt-4 border-t border-brand-900/5">
           <div className="flex flex-col">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-1">Base Salary</span>
-            <span className="font-display text-lg font-medium tracking-tight tabular-nums text-ink-900">
+            <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1">Base Salary</span>
+            <span className="font-display text-2xl font-semibold tracking-tight tabular-nums text-ink-900">
               {formatCurrency(employee.salary)}
             </span>
           </div>

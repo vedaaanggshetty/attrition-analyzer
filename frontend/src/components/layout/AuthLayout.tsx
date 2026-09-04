@@ -6,13 +6,13 @@ export function AuthLayout({
   title,
   subtitle,
   children,
-  footer,
+  footer,``
 }: {
-  title: string;
-  subtitle: string;
-  children: ReactNode;
-  footer: ReactNode;
-}) {
+    title: string;
+    subtitle: string;
+    children: ReactNode;
+    footer: ReactNode;
+  }) {
   return (
     <div className="flex min-h-screen">
       <div className="hidden w-1/2 flex-col justify-between bg-brand-900 p-12 text-white lg:flex">
@@ -39,7 +39,7 @@ export function AuthLayout({
         </Link>
 
         <div className="mx-auto w-full max-w-sm">
-          <h1 className="font-serif text-3xl font-semibold italic tracking-tight text-ink-900">{title}</h1>
+          <h1 className="font-serif text-4xl font-semibold italic tracking-tight text-ink-900">{title}</h1>
           <p className="mt-2 text-base text-neutral-500">{subtitle}</p>
           <div className="mt-8">{children}</div>
           <p className="mt-6 text-center text-sm text-neutral-500">{footer}</p>

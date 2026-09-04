@@ -173,7 +173,7 @@ export function EmployeeDetail() {
               size="xl"
             />
             <div className="pt-2">
-              <h1 className="font-serif text-4xl md:text-5xl font-semibold italic tracking-tight text-ink-900 mb-2">
+              <h1 className="font-serif text-5xl md:text-6xl font-semibold italic tracking-tight text-ink-900 mb-2">
                 {employee.firstName} {employee.lastName}
               </h1>
               <p className="text-lg text-neutral-600 font-medium">

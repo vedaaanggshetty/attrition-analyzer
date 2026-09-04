@@ -368,18 +368,18 @@ function PageTitle({ name }: { name: string }) {
   return (
     <div className="flex items-end justify-between gap-4">
       <div>
-        <h1 className="font-serif text-3xl font-semibold italic tracking-tight text-ink-900 sm:text-4xl">
+        <h1 className="font-serif text-4xl font-semibold italic tracking-tight text-ink-900 sm:text-5xl">
           Good morning, {name}
         </h1>
         <p className="mt-1.5 text-base text-neutral-500">{dateStr}</p>
       </div>
-      <Link
+      {/* <Link
         to="/employees"
         className="group hidden shrink-0 items-center gap-2 rounded-full bg-brand-900 py-2.5 pl-4 pr-3 text-xs font-semibold text-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.6)] transition-all duration-300 hover:bg-brand-700 hover:pr-4 hover:shadow-[0_10px_24px_-8px_rgba(0,0,0,0.7)] sm:flex"
       >
         Open Attrition Explorer
         <ChevronIcon className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-0.5" />
-      </Link>
+      </Link> */}
     </div>
   );
 }

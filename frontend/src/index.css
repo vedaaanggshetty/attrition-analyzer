@@ -22,6 +22,35 @@
      back into it (they were overriding to brand-900/blue before). Blue
      (brand-*) stays reserved for links, active states, CTAs and metrics. */
   --color-ink-900: #0d1b2e;
+
+  /* Global type scale override - the root cause of the app reading small
+     everywhere was that every page/component just used Tailwind's stock
+     text-* utilities (text-sm=14px, text-lg=18px, ...) with nothing
+     centralized bumping them up. Overriding the scale itself here means
+     every existing text-xs..text-8xl class in the app gets larger for free,
+     with no per-component !important patches and no risk of drift between
+     pages - a page using text-sm today stays "secondary text", it's just
+     that "secondary text" now means 15px instead of 14px, consistently. */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.2rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.4rem;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.65rem;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.85rem;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 2.05rem;
+  --text-3xl: 1.9375rem;
+  --text-3xl--line-height: 2.3rem;
+  --text-4xl: 2.375rem;
+  --text-4xl--line-height: 2.6rem;
+  --text-5xl: 3.25rem;
+  --text-5xl--line-height: 1.05;
+  --text-6xl: 3.875rem;
+  --text-6xl--line-height: 1.05;
 }
 
 :root {

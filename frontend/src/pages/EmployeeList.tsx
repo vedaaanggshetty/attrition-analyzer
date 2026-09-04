@@ -139,13 +139,13 @@ export function EmployeeList() {
       />
 
       <div className="mb-4 relative">
-        <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+        <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name, ID, or job role..."
           disabled={!employees}
-          className="shadow-control w-full rounded-full border border-brand-900/12 bg-white py-2.5 pl-11 pr-4 text-sm text-ink-900 outline-none transition-all duration-200 placeholder:text-neutral-400 hover:border-brand-900/20 focus:border-brand-900/40 focus:shadow-surface disabled:bg-brand-50/50"
+          className="shadow-control w-full rounded-full border border-brand-900/12 bg-white py-3 pl-12 pr-4 text-base text-ink-900 outline-none transition-all duration-200 placeholder:text-neutral-400 hover:border-brand-900/20 focus:border-brand-900/40 focus:shadow-surface disabled:bg-brand-50/50"
         />
       </div>
 
@@ -205,7 +205,7 @@ export function EmployeeList() {
             <button
               type="button"
               onClick={() => setFilters(DEFAULT_FILTERS)}
-              className="ml-1 text-xs font-semibold text-neutral-400 underline underline-offset-4 hover:text-brand-900 transition-colors"
+              className="ml-1 text-sm font-semibold text-neutral-400 underline underline-offset-4 hover:text-brand-900 transition-colors"
             >
               Clear filters
             </button>
@@ -273,13 +273,13 @@ function FilterSelect({
   renderLabel?: (value: string) => string;
 }) {
   return (
-    <label className="shadow-control inline-flex items-center gap-1.5 rounded-full border border-brand-900/12 bg-white py-1.5 pl-3.5 pr-2.5 text-xs transition-all duration-200 hover:border-brand-900/20 hover:shadow-surface has-[select:focus]:border-brand-900/40 has-[select:focus]:shadow-surface">
+    <label className="shadow-control inline-flex items-center gap-2 rounded-full border border-brand-900/12 bg-white py-2 pl-4 pr-3 text-sm transition-all duration-200 hover:border-brand-900/20 hover:shadow-surface has-[select:focus]:border-brand-900/40 has-[select:focus]:shadow-surface">
       <span className="font-semibold uppercase tracking-wide text-neutral-400">{label}</span>
       <select
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-md bg-transparent text-xs font-medium text-brand-900 outline-none disabled:text-neutral-400"
+        className="rounded-md bg-transparent text-sm font-medium text-brand-900 outline-none disabled:text-neutral-400"
       >
         {options.map((o) => (
           <option key={o} value={o}>

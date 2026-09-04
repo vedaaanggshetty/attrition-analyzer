@@ -83,7 +83,7 @@ export function Notifications() {
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-white/45">HR</p>
-            <h1 className="font-serif text-2xl font-semibold italic tracking-tight text-white sm:text-3xl">
+            <h1 className="font-serif text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
               Notifications
             </h1>
           </div>
