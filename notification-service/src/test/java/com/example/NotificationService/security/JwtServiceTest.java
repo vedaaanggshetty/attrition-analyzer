@@ -19,9 +19,11 @@ class JwtServiceTest {
     private final JwtService jwtService = new JwtService(SECRET);
 
     @Test
-    void extractEmailReturnsSubjectFromValidToken() {
+    void extractEmailReturnsEmailClaimFromValidToken() {
         String token = Jwts.builder()
-                .subject("hr@example.com")
+                .subject("11111111-1111-1111-1111-111111111111")
+                .claim("email", "hr@example.com")
+                .claim("role", "HR")
                 .signWith(Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8)))
                 .compact();
 
