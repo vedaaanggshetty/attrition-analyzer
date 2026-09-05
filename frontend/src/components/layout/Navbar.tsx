@@ -11,12 +11,12 @@ export function Navbar() {
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Guests aren't logged in, so "Analytics" can't point at the protected
-  // dashboard (US-21) - it points at the guest-visible analytics section
-  // on the landing page instead.
+  // Guest = not logged in. Analytics/Employees both point at protected
+  // routes so ProtectedRoute redirects a guest straight to /login; an
+  // authenticated HR user lands on the real page.
   const LINKS = [
     { label: "Home", to: "/" },
-    { label: "Analytics", to: isAuthenticated ? "/dashboard" : "/#analytics" },
+    { label: "Analytics", to: "/dashboard" },
     { label: "Employees", to: "/employees" },
     { label: "About", to: "/about" },
   ];
