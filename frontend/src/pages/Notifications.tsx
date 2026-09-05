@@ -70,45 +70,48 @@ export function Notifications() {
   }
 
   return (
-    <div className="flex w-full flex-col gap-4">
-      {/* ── Hero ─────────────────────────────────────────────────── */}
+    <div className="flex w-full flex-col gap-6">
+      {/* ── Header: title/description left, stats right ─────────── */}
       <div
         className="relative overflow-hidden rounded-3xl border border-brand-900/10 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_20px_44px_-24px_rgba(0,0,0,0.45)] sm:p-6"
         style={{ background: "linear-gradient(135deg, #050505 0%, #141414 60%, #1f1f1f 130%)" }}
       >
         <BellGlyph />
-        <div className="relative flex items-center gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/10 backdrop-blur-sm">
-            <Bell className="h-5 w-5" strokeWidth={1.75} />
-          </div>
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-white/45">HR</p>
-            <h1 className="font-serif text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
-              Notifications
-            </h1>
+            <div className="flex items-center gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/10 backdrop-blur-sm">
+                <Bell className="h-5 w-5" strokeWidth={1.75} />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/45">HR</p>
+                <h1 className="font-serif text-3xl font-semibold italic tracking-tight text-white sm:text-4xl">
+                  Notifications
+                </h1>
+              </div>
+            </div>
+            <p className="mt-2.5 max-w-lg text-sm leading-relaxed text-white/60">
+              Every note you've sent from an employee's record, in one place - who it's about, what you said, and when.
+            </p>
+          </div>
+
+          {/* ── Stats: inline, divided by thin rules, no cards ────── */}
+          <div className="flex flex-wrap items-stretch divide-x divide-white/15 lg:shrink-0">
+            <HeaderStat label="Total" value={stats?.total} />
+            <HeaderStat label="Last 24h" value={stats?.last24h} accent />
+            <HeaderStat label="This week" value={stats?.last7d} />
+            <HeaderStat
+              label="Latest"
+              value={stats?.latest ? formatRelativeTime(stats.latest.createdAt) : undefined}
+              isText
+            />
           </div>
         </div>
-        <p className="relative mt-2.5 max-w-lg text-sm leading-relaxed text-white/60">
-          Every note you've sent from an employee's record, in one place - who it's about, what you said, and when.
-        </p>
       </div>
 
-      {/* ── KPI row ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
-        <KpiTile label="Total" value={stats?.total} sub="all time" />
-        <KpiTile label="Last 24h" value={stats?.last24h} sub="new activity" accent />
-        <KpiTile label="This week" value={stats?.last7d} sub="past 7 days" />
-        <KpiTile
-          label="Latest"
-          value={stats?.latest ? formatRelativeTime(stats.latest.createdAt) : undefined}
-          sub={stats?.latest ? stats.latest.employeeName : "no activity yet"}
-          isText
-        />
-      </div>
-
-      {/* ── Main bento: timeline + side summary ─────────────────── */}
-      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-12">
-        <div className="glass-card rounded-3xl p-4 sm:p-5 lg:col-span-8">
+      {/* ── Open workspace: activity feed | recent + department ─── */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <div className="lg:col-span-8">
           <div className="mb-4 flex items-baseline justify-between">
             <h2 className="font-serif text-lg font-semibold italic text-ink-900">Activity</h2>
             {stats ? (
@@ -143,8 +146,8 @@ export function Notifications() {
         </div>
 
         {/* ── Side column: recency + department breakdown ────────── */}
-        <div className="flex flex-col gap-3.5 lg:col-span-4">
-          <div className="glass-card rounded-3xl p-4 sm:p-5">
+        <div className="flex flex-col gap-8 lg:col-span-4 lg:border-l lg:border-brand-900/10 lg:pl-8">
+          <div>
             <div className="mb-1 flex items-center gap-2">
               <Clock className="h-4 w-4 text-brand-500" strokeWidth={1.75} />
               <h3 className="text-sm font-semibold text-ink-900">Recent activity</h3>
@@ -183,7 +186,7 @@ export function Notifications() {
             )}
           </div>
 
-          <div className="glass-card rounded-3xl p-4 sm:p-5">
+          <div className="border-t border-brand-900/8 pt-6">
             <div className="mb-1 flex items-center gap-2">
               <Building2 className="h-4 w-4 text-brand-500" strokeWidth={1.75} />
               <h3 className="text-sm font-semibold text-ink-900">By department</h3>
@@ -229,36 +232,35 @@ export function Notifications() {
   );
 }
 
-function KpiTile({
+// Inline header stat - label over value, separated from its neighbors by the
+// parent's `divide-x` rule rather than a card/border/background of its own.
+function HeaderStat({
   label,
   value,
-  sub,
   accent = false,
   isText = false,
 }: {
   label: string;
   value: string | number | undefined;
-  sub: string;
   accent?: boolean;
   isText?: boolean;
 }) {
   return (
-    <div className="glass-card flex flex-col justify-between rounded-2xl p-4 transition-shadow duration-300 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_16px_32px_-16px_rgba(0,0,0,0.18)]">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">{label}</span>
+    <div className="flex flex-col justify-center px-4 first:pl-0 last:pr-0">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">{label}</span>
       {value !== undefined ? (
         <p
           className={cx(
-            "num mt-2 truncate font-display font-semibold tracking-tight",
-            isText ? "text-lg text-brand-900" : "text-2xl",
-            accent ? "text-brand-600" : "text-brand-900"
+            "num mt-1 truncate font-display font-semibold tracking-tight text-white",
+            isText ? "text-base" : "text-xl",
+            accent && "text-brand-300"
           )}
         >
           {value}
         </p>
       ) : (
-        <Skeleton className="mt-2 h-6 w-14 rounded-md" />
+        <Skeleton className="mt-1 h-5 w-12 rounded bg-white/10" />
       )}
-      <span className="mt-1 truncate text-[11px] text-neutral-400">{sub}</span>
     </div>
   );
 }
@@ -288,7 +290,7 @@ function TimelineRow({
     <li className="group/row relative">
       <div
         className={cx(
-          "grid grid-cols-[44px_16px_1fr_28px] items-start gap-x-2.5 rounded-2xl px-2.5 py-3 transition-all duration-200 sm:grid-cols-[64px_16px_100px_1fr_28px] sm:gap-x-3.5 sm:px-3",
+          "grid grid-cols-[44px_16px_1fr_28px] items-start gap-x-2.5 rounded-2xl px-2.5 py-3 transition-all duration-200 sm:grid-cols-[64px_16px_1fr_28px] sm:gap-x-3.5 sm:px-3",
           "hover:bg-gradient-to-r hover:from-white hover:to-brand-50/50 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_20px_-12px_rgba(0,0,0,0.18)] hover:ring-1 hover:ring-brand-900/[0.06]",
           "focus-within:bg-gradient-to-r focus-within:from-white focus-within:to-brand-50/50 focus-within:ring-1 focus-within:ring-brand-900/[0.06]"
         )}
@@ -307,23 +309,10 @@ function TimelineRow({
           {!isLast && <span className="mt-1 w-px flex-1 bg-neutral-200" />}
         </div>
 
-        {/* ticket / identifier */}
-        <div className="hidden items-start gap-2 pt-0.5 sm:flex">
-          <span className={cx("mt-0.5 h-3.5 w-[3px] shrink-0 rounded-full", isNew ? "bg-brand-500" : "bg-neutral-200")} />
-          <Link
-            to={`/employees?department=${encodeURIComponent(note.department)}`}
-            className="truncate text-xs font-semibold text-neutral-500 hover:text-brand-700"
-            title={note.department}
-          >
-            #{note.id}
-          </Link>
-        </div>
-
         {/* message */}
         <Link to={`/employees?department=${encodeURIComponent(note.department)}`} className="min-w-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 sm:hidden">
             <span className="text-xs font-medium text-neutral-400">{timeLabel}</span>
-            <span className="text-xs font-semibold text-neutral-500">#{note.id}</span>
           </div>
           <p className="text-sm font-semibold text-ink-900">{note.employeeName}</p>
           <p className="mt-0.5 line-clamp-2 text-sm leading-relaxed text-neutral-600">{note.comment}</p>
@@ -353,12 +342,11 @@ function TimelineSkeleton() {
   return (
     <div className="flex flex-col gap-1 animate-pulse">
       {Array.from({ length: 5 }, (_, i) => (
-        <div key={i} className="grid grid-cols-[44px_16px_1fr] items-start gap-x-2.5 px-2.5 py-3 sm:grid-cols-[64px_16px_100px_1fr]">
+        <div key={i} className="grid grid-cols-[44px_16px_1fr] items-start gap-x-2.5 px-2.5 py-3 sm:grid-cols-[64px_16px_1fr]">
           <Skeleton className="hidden h-3 w-10 justify-self-end rounded sm:block" />
           <div className="flex justify-center">
             <Skeleton className="mt-1.5 h-2 w-2 rounded-full" />
           </div>
-          <Skeleton className="hidden h-3 w-10 rounded sm:block" />
           <div className="space-y-2">
             <Skeleton className="h-3.5 w-32" />
             <Skeleton className="h-3 w-full" />
