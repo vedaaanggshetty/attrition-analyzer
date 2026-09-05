@@ -6,7 +6,7 @@ import { cx } from "../../lib/utils";
  */
 export function Wordmark({ dark = false }: { dark?: boolean }) {
   return (
-    <span className={cx("font-display text-base font-semibold tracking-tight", dark && "text-white")}>
+    <span className={cx("font-display text-base font-semibold tracking-tight whitespace-nowrap", dark && "text-white")}>
       Attrition <em className="font-serif italic tracking-tight">Analyzer</em>
     </span>
   );

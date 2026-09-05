@@ -246,7 +246,7 @@ function HeaderStat({
   isText?: boolean;
 }) {
   return (
-    <div className="flex flex-col justify-center px-4 first:pl-0 last:pr-0">
+    <div className="flex flex-1 flex-col justify-center px-6 sm:px-10 min-w-[110px] sm:min-w-[140px] first:pl-0 last:pr-0">
       <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">{label}</span>
       {value !== undefined ? (
         <p
