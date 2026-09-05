@@ -6,6 +6,12 @@
 .env.*
 !.env.example
 
+# log files
+*.log
+
+# claude md
+CLAUDE.md
+
 # ========================
 # Maven build artifacts
 # ========================
