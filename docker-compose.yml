@@ -65,18 +65,26 @@ services:
     networks:
       - attrition-net
 
-  authentication-db:
+  # Single MySQL server hosting all three service databases (auth, profile,
+  # notification) as separate schemas with separate per-service credentials.
+  # docker/mysql/init-databases.sh runs once on first startup (empty volume)
+  # to create the databases/users - see that file for the exact grants.
+  mysql-db:
     image: mysql:8.0
-    container_name: authentication-db
+    container_name: mysql-db
     environment:
-      MYSQL_DATABASE: authentication_db
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_USER: ${AUTH_DB_USERNAME}
-      MYSQL_PASSWORD: ${AUTH_DB_PASSWORD}
+      AUTH_DB_USERNAME: ${AUTH_DB_USERNAME}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      PROFILE_DB_USERNAME: ${PROFILE_DB_USERNAME}
+      PROFILE_DB_PASSWORD: ${PROFILE_DB_PASSWORD}
+      NOTIFICATION_DB_USERNAME: ${NOTIFICATION_DB_USERNAME}
+      NOTIFICATION_DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
     ports:
-      - "3308:3306"
+      - "3306:3306"
     volumes:
-      - authentication-db-data:/var/lib/mysql
+      - mysql-db-data:/var/lib/mysql
+      - ./docker/mysql/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}" ]
       interval: 5s
@@ -94,33 +102,12 @@ services:
       - "8081:8081"
     environment:
       JAVA_OPTS: >-
-        -Deureka.client.service-url.defaultZone=http://discovery-service:8761/eureka/ -Dspring.datasource.url=jdbc:mysql://authentication-db:3306/authentication_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC -Dspring.datasource.username=${AUTH_DB_USERNAME} -Dspring.datasource.password=${AUTH_DB_PASSWORD} -Djwt.secret=${JWT_SECRET}
+        -Deureka.client.service-url.defaultZone=http://discovery-service:8761/eureka/ -Dspring.datasource.url=jdbc:mysql://mysql-db:3306/authentication_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC -Dspring.datasource.username=${AUTH_DB_USERNAME} -Dspring.datasource.password=${AUTH_DB_PASSWORD} -Djwt.secret=${JWT_SECRET}
     depends_on:
       discovery-service:
         condition: service_started
-      authentication-db:
+      mysql-db:
         condition: service_healthy
-    networks:
-      - attrition-net
-
-  user-profile-db:
-    image: mysql:8.0
-    container_name: user-profile-db
-    environment:
-      MYSQL_DATABASE: user_profile_db
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_USER: ${PROFILE_DB_USERNAME}
-      MYSQL_PASSWORD: ${PROFILE_DB_PASSWORD}
-    ports:
-      - "3309:3306"
-    volumes:
-      - user-profile-db-data:/var/lib/mysql
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}" ]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 45s
     networks:
       - attrition-net
 
@@ -132,33 +119,12 @@ services:
       - "8082:8082"
     environment:
       JAVA_OPTS: >-
-        -Deureka.client.service-url.defaultZone=http://discovery-service:8761/eureka/ -Dspring.datasource.url=jdbc:mysql://user-profile-db:3306/user_profile_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC -Dspring.datasource.username=${PROFILE_DB_USERNAME} -Dspring.datasource.password=${PROFILE_DB_PASSWORD} -Djwt.secret=${JWT_SECRET}
+        -Deureka.client.service-url.defaultZone=http://discovery-service:8761/eureka/ -Dspring.datasource.url=jdbc:mysql://mysql-db:3306/user_profile_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC -Dspring.datasource.username=${PROFILE_DB_USERNAME} -Dspring.datasource.password=${PROFILE_DB_PASSWORD} -Djwt.secret=${JWT_SECRET}
     depends_on:
       discovery-service:
         condition: service_started
-      user-profile-db:
+      mysql-db:
         condition: service_healthy
-    networks:
-      - attrition-net
-
-  notification-db:
-    image: mysql:8.0
-    container_name: notification-db
-    environment:
-      MYSQL_DATABASE: notification_db
-      MYSQL_ROOT_PASSWORD: ${NOTIFICATION_DB_ROOT_PASSWORD}
-      MYSQL_USER: ${NOTIFICATION_DB_USERNAME}
-      MYSQL_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
-    ports:
-      - "3307:3306"
-    volumes:
-      - notification-db-data:/var/lib/mysql
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${NOTIFICATION_DB_ROOT_PASSWORD}" ]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 45s
     networks:
       - attrition-net
 
@@ -170,14 +136,31 @@ services:
       - "8084:8084"
     environment:
       JAVA_OPTS: >-
-        -Deureka.client.service-url.defaultZone=http://discovery-service:8761/eureka/ -Dspring.datasource.url=jdbc:mysql://notification-db:3306/notification_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC -Dspring.datasource.username=${NOTIFICATION_DB_USERNAME} -Dspring.datasource.password=${NOTIFICATION_DB_PASSWORD} -Djwt.secret=${JWT_SECRET} -Dspring.kafka.bootstrap-servers=kafka:9092
+        -Deureka.client.service-url.defaultZone=http://discovery-service:8761/eureka/ -Dspring.datasource.url=jdbc:mysql://mysql-db:3306/notification_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC -Dspring.datasource.username=${NOTIFICATION_DB_USERNAME} -Dspring.datasource.password=${NOTIFICATION_DB_PASSWORD} -Djwt.secret=${JWT_SECRET} -Dspring.kafka.bootstrap-servers=kafka:9092
     depends_on:
       discovery-service:
         condition: service_started
-      notification-db:
+      mysql-db:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    networks:
+      - attrition-net
+
+  # Static build served by nginx. The BROWSER (not this container) talks to
+  # the Gateway, so VITE_API_BASE_URL must be a host-reachable address, never
+  # a Docker-internal hostname like "api-gateway" - it defaults to
+  # http://localhost:8080 (the Gateway's host-mapped port) unless overridden.
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
     networks:
       - attrition-net
 
@@ -186,6 +169,4 @@ networks:
     driver: bridge
 
 volumes:
-  authentication-db-data:
-  user-profile-db-data:
-  notification-db-data:
+  mysql-db-data:
