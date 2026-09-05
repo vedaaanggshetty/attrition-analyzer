@@ -22,6 +22,10 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (fullName: string, email: string, password: string, phone?: string) => Promise<void>;
   logout: () => void;
+  /** Profile page calls this after a successful save so the sidebar/greeting
+   * (which read user.fullName from this shared context) pick up the change
+   * immediately instead of showing the stale name from login. */
+  setFullName: (fullName: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -118,9 +122,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [login]
   );
 
+  const setFullName = useCallback((fullName: string) => {
+    setUser((current) => (current ? { ...current, fullName } : current));
+  }, []);
+
   const value = useMemo<AuthContextValue>(
-    () => ({ user, isAuthenticated: user !== null, sessionExpired, login, register, logout }),
-    [user, sessionExpired, login, register, logout]
+    () => ({ user, isAuthenticated: user !== null, sessionExpired, login, register, logout, setFullName }),
+    [user, sessionExpired, login, register, logout, setFullName]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

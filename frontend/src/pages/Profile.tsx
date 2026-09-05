@@ -10,7 +10,7 @@ import { Button } from "../components/ui/Button";
 import { Skeleton } from "../components/ui/Skeleton";
 
 export function Profile() {
-  const { user } = useAuth();
+  const { user, setFullName } = useAuth();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -36,6 +36,7 @@ export function Profile() {
     try {
       const updated = await updateMyProfile(form);
       setProfile(updated);
+      setFullName(updated.fullName);
       setEditing(false);
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2500);
