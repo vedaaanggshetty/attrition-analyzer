@@ -29,6 +29,8 @@ public class JwtService {
 		this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
 	}
 
+	private static final String EMAIL_CLAIM = "email";
+
 	public String extractEmail(String token) {
 		try {
 			Claims claims = Jwts.parser()
@@ -36,7 +38,7 @@ public class JwtService {
 					.build()
 					.parseSignedClaims(token)
 					.getPayload();
-			return claims.getSubject();
+			return claims.get(EMAIL_CLAIM, String.class);
 		} catch (JwtException | IllegalArgumentException ex) {
 			throw new UnauthenticatedException();
 		}
