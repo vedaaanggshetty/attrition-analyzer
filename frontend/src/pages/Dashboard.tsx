@@ -483,9 +483,9 @@ export function Dashboard() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function SectionEyebrow({ label }: { label: string }) {
-  return <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-widest text-neutral-400">{label}</p>;
-}
+// function SectionEyebrow({ label }: { label: string }) {
+//   return <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-widest text-neutral-400">{label}</p>;
+// }
 
 function DashboardHeader() {
   const now = new Date();

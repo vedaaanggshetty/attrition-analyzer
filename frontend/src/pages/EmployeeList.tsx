@@ -120,7 +120,7 @@ export function EmployeeList() {
   if (loadError) {
     return (
       <div className="mx-auto max-w-7xl">
-        <PageHeader eyebrow="Attrition Explorer" title="Employees" />
+        <PageHeader title="Employees" />
         <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{loadError}</p>
       </div>
     );
@@ -129,27 +129,28 @@ export function EmployeeList() {
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        eyebrow="US-11 – US-16 · Attrition Explorer"
         title="Employees"
         description={
           employees
-            ? `${filtered.length} of ${employees.length} employees match${activeFilterCount ? ` · ${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""} active` : ""}`
+            ? activeFilterCount === 0 && query.trim() === ""
+              ? `Showing all ${employees.length.toLocaleString()} employees`
+              : `${filtered.length.toLocaleString()} matching employee${filtered.length === 1 ? "" : "s"}${activeFilterCount ? ` · ${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""} active` : ""}`
             : undefined
         }
       />
 
-      <div className="mb-4 relative">
-        <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
+      <div className="mb-3 relative">
+        <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name, ID, or job role..."
           disabled={!employees}
-          className="shadow-control w-full rounded-full border border-brand-900/12 bg-white py-3 pl-12 pr-4 text-base text-ink-900 outline-none transition-all duration-200 placeholder:text-neutral-400 hover:border-brand-900/20 focus:border-brand-900/40 focus:shadow-surface disabled:bg-brand-50/50"
+          className="shadow-control w-full rounded-full border border-brand-900/12 bg-white py-2.5 pl-10 pr-4 text-sm text-ink-900 outline-none transition-all duration-200 placeholder:text-neutral-400 hover:border-brand-900/20 focus:border-brand-900/40 focus:shadow-surface disabled:bg-brand-50/50"
         />
       </div>
 
-      <div className="mb-8 flex flex-col gap-3 border-y border-brand-900/8 py-4">
+      <div className="mb-6 flex flex-col gap-2.5 border-y border-brand-900/8 py-3">
         <div className="flex flex-wrap items-center gap-2">
           <FilterSelect
             label="Attrition"
@@ -273,8 +274,8 @@ function FilterSelect({
   renderLabel?: (value: string) => string;
 }) {
   return (
-    <label className="shadow-control inline-flex items-center gap-2 rounded-full border border-brand-900/12 bg-white py-2 pl-4 pr-3 text-sm transition-all duration-200 hover:border-brand-900/20 hover:shadow-surface has-[select:focus]:border-brand-900/40 has-[select:focus]:shadow-surface">
-      <span className="font-semibold uppercase tracking-wide text-neutral-400">{label}</span>
+    <label className="shadow-control inline-flex items-center gap-1.5 rounded-full border border-brand-900/12 bg-white py-1.5 pl-3.5 pr-2.5 text-sm transition-all duration-200 hover:border-brand-900/20 hover:shadow-surface has-[select:focus]:border-brand-900/40 has-[select:focus]:shadow-surface">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">{label}</span>
       <select
         value={value}
         disabled={disabled}

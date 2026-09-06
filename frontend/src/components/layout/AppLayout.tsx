@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Avatar } from "../ui/Avatar";
 import { Wordmark } from "../ui/Wordmark";
@@ -27,7 +27,7 @@ export function AppLayout() {
     <div className="h-screen overflow-hidden bg-neutral-100">
       <div className="relative flex h-screen flex-col overflow-hidden bg-white md:flex-row">
         {/* Hover-glide rail: starts expanded (252px, full labels), eases to
-            a 76px icon rail on mouseleave and back on mouseenter. It's a
+            an 88px icon rail on mouseleave and back on mouseenter. It's a
             normal in-flow flex child, so the main content genuinely resizes
             alongside it - never covered, never clipped. */}
         <Sidebar>
@@ -74,14 +74,15 @@ function SidebarContent({
       display: animate ? (open ? "inline-block" : "none") : "inline-block",
       opacity: animate ? (open ? 1 : 0) : 1,
     },
-    transition: { duration: 0.15 },
+    transition: { duration: 0.2, ease: "easeInOut" as const },
   };
 
   return (
     <>
       <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
-        {/* Logo — always shows the small dot, animates the text label out */}
-        <Link to="/" className="flex items-center gap-2 px-2 py-1">
+        {/* Logo — always shows the small dot, animates the text label out.
+            Branding only (not a navigation link) - clicking it does nothing. */}
+        <div className="flex items-center gap-2 px-2 py-1">
           <span className="flex h-6 w-6 shrink-0 items-center justify-center">
             <span className="block h-2.5 w-2.5 rounded-full bg-brand-700" />
           </span>
@@ -91,7 +92,7 @@ function SidebarContent({
           >
             <Wordmark />
           </motion.span>
-        </Link>
+        </div>
 
         <nav className="mt-10 flex flex-col gap-1">
           {NAV_ITEMS.map((item) => (
@@ -108,7 +109,7 @@ function SidebarContent({
         </nav>
       </div>
 
-      {/* Bottom: avatar card + back link */}
+      {/* Bottom: avatar card */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2.5 rounded-xl border border-brand-900/10 bg-brand-50/60 p-2.5">
           {/* Avatar is always visible */}
@@ -129,21 +130,12 @@ function SidebarContent({
             type="button"
             onClick={onLogout}
             aria-label="Log out"
+            title="Logout"
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-white hover:text-brand-900"
           >
             <LogoutIcon className="h-4 w-4" />
           </motion.button>
         </div>
-
-        {/* "Back to site" animates out entirely */}
-        <motion.div {...fadeMotion} className="!m-0 !p-0 overflow-hidden">
-          <Link
-            to="/"
-            className="block whitespace-nowrap px-1 text-xs font-medium text-neutral-400 hover:text-brand-900"
-          >
-            &larr; Back to site
-          </Link>
-        </motion.div>
       </div>
     </>
   );

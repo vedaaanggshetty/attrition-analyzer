@@ -89,10 +89,13 @@ export const DesktopSidebar = ({ className, children, ...props }: React.Componen
         className
       )}
       animate={{
-        width: animate ? (open ? "252px" : "76px") : "252px",
+        // 88px (not a tighter value) so the collapsed rail's avatar card
+        // (p-2.5 padding + border) has enough room for the full avatar
+        // circle without its rounded corner clipping into it.
+        width: animate ? (open ? "252px" : "88px") : "252px",
       }}
       initial={false}
-      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.2, ease: "easeInOut" }}
       onMouseEnter={() => animate && setOpen(true)}
       onMouseLeave={() => animate && setOpen(false)}
       {...props}
@@ -176,6 +179,7 @@ export const SidebarLink = ({
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
         }}
+        transition={{ duration: 0.2, ease: "easeInOut" }}
         className="!m-0 inline-block whitespace-pre !p-0 transition duration-150 group-hover/sidebar:translate-x-0.5"
       >
         {link.label}

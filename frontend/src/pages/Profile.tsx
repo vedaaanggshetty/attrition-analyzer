@@ -141,10 +141,6 @@ export function Profile() {
         <h2 className="font-serif text-lg font-semibold text-ink-900">Account</h2>
         <dl className="mt-5 flex flex-col gap-4 text-sm">
           <div className="flex items-center justify-between border-b border-brand-900/8 pb-4">
-            <dt className="text-neutral-500">User ID</dt>
-            <dd className="font-mono text-xs text-neutral-700">{profile.userId}</dd>
-          </div>
-          <div className="flex items-center justify-between border-b border-brand-900/8 pb-4">
             <dt className="text-neutral-500">Member since</dt>
             <dd className="font-medium text-ink-900">{formatDate(profile.createdAt)}</dd>
           </div>

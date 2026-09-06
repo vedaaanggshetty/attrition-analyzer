@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Avatar } from "../components/ui/Avatar";
 import { Skeleton } from "../components/ui/Skeleton";
-import { Bell, Clock, Building2, MoreHorizontal } from "lucide-react";
+import { Bell, Clock, Building2, Trash2 } from "lucide-react";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
@@ -321,16 +321,20 @@ function TimelineRow({
           </p>
         </Link>
 
-        {/* overflow action - only visible on hover/focus of this row */}
-        <div className="flex justify-end pt-0.5">
+        {/* delete action - only visible on hover/focus of this row */}
+        <div className="relative flex justify-end pt-0.5">
           <button
             type="button"
-            onClick={onDelete}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
             disabled={deleting}
             aria-label="Delete notification"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-300 opacity-0 transition-all duration-200 hover:bg-red-50 hover:text-red-500 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 group-hover/row:opacity-100 group-focus-within/row:opacity-100 disabled:opacity-30"
+            title="Delete notification"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-300 opacity-0 transition-all duration-200 hover:bg-red-50 hover:text-red-500 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:opacity-30 group-hover/row:opacity-100 group-focus-within/row:opacity-100"
           >
-            <MoreHorizontal className="h-4 w-4" strokeWidth={2} />
+            <Trash2 className="h-4 w-4" strokeWidth={2} />
           </button>
         </div>
       </div>

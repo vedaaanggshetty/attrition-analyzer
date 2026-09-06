@@ -22,9 +22,9 @@ export function EmployeeCard({ employee, featured = false }: { employee: Employe
     <motion.div variants={cardVariants} className={featured ? "sm:col-span-2 sm:row-span-2" : undefined}>
       <Link
         to={`/employees/${employee.id}`}
-        className="group relative flex h-full flex-col justify-between overflow-hidden rounded-xl bg-neutral-50 p-6 transition-all duration-300 hover:bg-neutral-100 hover:shadow-sm border border-brand-900/5"
+        className="group relative flex h-full flex-col justify-between overflow-hidden rounded-xl bg-neutral-50 p-5 transition-all duration-300 hover:bg-neutral-100 hover:shadow-sm border border-brand-900/5"
       >
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
           <div className="flex items-start justify-between gap-3">
             <Avatar
               firstName={employee.firstName}
@@ -39,7 +39,7 @@ export function EmployeeCard({ employee, featured = false }: { employee: Employe
             <p className={cx("truncate font-semibold text-ink-900 mb-1.5 tracking-tight", featured ? "text-3xl" : "text-xl")}>
               {employee.firstName} {employee.lastName}
             </p>
-            <p className="truncate text-base font-medium text-neutral-500 mb-4">{employee.jobRole}</p>
+            <p className="truncate text-base font-medium text-neutral-500 mb-3">{employee.jobRole}</p>
 
             <div className="flex flex-wrap items-center gap-2">
               <span
@@ -63,7 +63,7 @@ export function EmployeeCard({ employee, featured = false }: { employee: Employe
           )}
         </div>
 
-        <div className="mt-8 flex items-end justify-between pt-4 border-t border-brand-900/5">
+        <div className="mt-6 flex items-end justify-between pt-3 border-t border-brand-900/5">
           <div className="flex flex-col">
             <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1">Base Salary</span>
             <span className="font-display text-2xl font-semibold tracking-tight tabular-nums text-ink-900">
