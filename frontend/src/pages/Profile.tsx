@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Card } from "../components/ui/Card";
 import { Avatar } from "../components/ui/Avatar";
+import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Skeleton } from "../components/ui/Skeleton";
 
@@ -60,13 +61,16 @@ export function Profile() {
     return (
       <div className="mx-auto max-w-3xl">
         <PageHeader eyebrow="Account" title="Profile" description="Manage your account and settings." />
-        <Card className="p-6 sm:p-8">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-16 w-16 rounded-full" />
+        <Card className="overflow-hidden p-0">
+          <div className="flex items-center gap-5 border-b border-brand-900/8 bg-brand-50/40 px-6 py-6 sm:px-8">
+            <Skeleton className="h-20 w-20 rounded-full" />
             <div className="flex flex-col gap-2">
               <Skeleton className="h-5 w-40" />
               <Skeleton className="h-4 w-56" />
             </div>
+          </div>
+          <div className="px-6 py-6 sm:px-8">
+            <Skeleton className="h-4 w-32" />
           </div>
         </Card>
       </div>
@@ -77,38 +81,51 @@ export function Profile() {
     <div className="mx-auto max-w-3xl">
       <PageHeader eyebrow="Account" title="Profile" description="Manage your account and settings." />
 
-      <Card className="p-6 sm:p-8">
-        <div className="flex items-center gap-4">
-          <Avatar firstName={profile.fullName.split(" ")[0]} lastName={profile.fullName.split(" ")[1] ?? ""} size="lg" />
-          <div>
-            <h2 className="font-serif text-xl font-semibold text-ink-900">{profile.fullName}</h2>
-            <p className="text-sm text-neutral-500">{profile.email}</p>
+      <Card className="overflow-hidden p-0">
+        {/* Identity header - avatar, name, role, email read together as one unit */}
+        <div className="flex flex-wrap items-center gap-5 border-b border-brand-900/8 bg-brand-50/40 px-6 py-6 sm:px-8">
+          <Avatar firstName={profile.fullName.split(" ")[0]} lastName={profile.fullName.split(" ")[1] ?? ""} size="xl" />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="truncate font-serif text-2xl font-semibold tracking-tight text-ink-900">
+                {profile.fullName}
+              </h2>
+              <Badge className="bg-brand-900/8 text-brand-800">{user?.role ?? "HR User"}</Badge>
+            </div>
+            <p className="mt-1 text-sm text-neutral-500">{profile.email}</p>
           </div>
         </div>
 
-        <form onSubmit={handleSave} className="mt-8 grid gap-5 border-t border-brand-900/8 pt-6 sm:grid-cols-2">
-          <TextField
-            label="Full name"
-            value={form.fullName}
-            disabled={!editing}
-            onChange={(v) => setForm((f) => ({ ...f, fullName: v }))}
-          />
-          <TextField label="Email" value={profile.email} disabled />
-          <TextField
-            label="Phone"
-            value={form.phone}
-            disabled={!editing}
-            onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
-          />
-          <TextField label="Role" value={user?.role ?? "HR User"} disabled />
+        <form onSubmit={handleSave} className="px-6 py-6 sm:px-8 sm:py-7">
+          <div className="mb-5">
+            <h3 className="text-sm font-semibold text-ink-900">Personal information</h3>
+            <p className="mt-0.5 text-xs text-neutral-400">Your name and contact details.</p>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <TextField
+              label="Full name"
+              value={form.fullName}
+              disabled={!editing}
+              onChange={(v) => setForm((f) => ({ ...f, fullName: v }))}
+            />
+            <TextField label="Email" value={profile.email} disabled />
+            <TextField
+              label="Phone"
+              value={form.phone}
+              disabled={!editing}
+              onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
+            />
+            <TextField label="Role" value={user?.role ?? "HR User"} disabled />
+          </div>
 
           {saveError && (
-            <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700 sm:col-span-2">
+            <p role="alert" className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
               {saveError}
             </p>
           )}
 
-          <div className="flex items-center gap-3 sm:col-span-2">
+          <div className="mt-6 flex items-center gap-3 border-t border-brand-900/8 pt-5">
             {editing ? (
               <>
                 <Button type="submit" size="sm" disabled={saving}>
@@ -138,15 +155,15 @@ export function Profile() {
       </Card>
 
       <Card className="mt-5 p-6 sm:p-8">
-        <h2 className="font-serif text-lg font-semibold text-ink-900">Account</h2>
-        <dl className="mt-5 flex flex-col gap-4 text-sm">
-          <div className="flex items-center justify-between border-b border-brand-900/8 pb-4">
-            <dt className="text-neutral-500">Member since</dt>
-            <dd className="font-medium text-ink-900">{formatDate(profile.createdAt)}</dd>
+        <h3 className="text-sm font-semibold text-ink-900">Account details</h3>
+        <dl className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-1 border-b border-brand-900/8 pb-4 sm:border-b-0 sm:pb-0">
+            <dt className="text-xs font-medium uppercase tracking-wide text-neutral-400">Member since</dt>
+            <dd className="text-sm font-medium text-ink-900">{formatDate(profile.createdAt)}</dd>
           </div>
-          <div className="flex items-center justify-between">
-            <dt className="text-neutral-500">Access level</dt>
-            <dd className="font-medium text-ink-900">{user?.role ?? "HR User"}</dd>
+          <div className="flex flex-col gap-1">
+            <dt className="text-xs font-medium uppercase tracking-wide text-neutral-400">Access level</dt>
+            <dd className="text-sm font-medium text-ink-900">{user?.role ?? "HR User"}</dd>
           </div>
         </dl>
       </Card>
