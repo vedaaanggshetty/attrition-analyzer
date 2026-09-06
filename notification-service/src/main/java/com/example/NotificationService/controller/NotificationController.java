@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,17 +44,26 @@ public class NotificationController {
     }
 
     @GetMapping("/notifications")
-    public List<NotificationDto> getMyNotifications(
+    public List<NotificationDto> getAllNotifications(
             @RequestHeader(value = "Authorization", required = false) String authorization) {
-        String email = currentUserEmail(authorization);
-        return notificationService.getNotificationsForUser(email);
+        // Auth is still required (any valid HR session), but the list itself
+        // is shared across every HR user rather than filtered by caller.
+        currentUserEmail(authorization);
+        return notificationService.getAllNotifications();
+    }
+
+    @PatchMapping("/notifications/{id}/read")
+    public ResponseEntity<NotificationDto> markAsRead(@PathVariable Long id,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        currentUserEmail(authorization);
+        return ResponseEntity.ok(notificationService.markAsRead(id));
     }
 
     @DeleteMapping("/notifications/{id}")
     public ResponseEntity<Void> deleteNotification(@PathVariable Long id,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
-        String email = currentUserEmail(authorization);
-        notificationService.deleteNotification(id, email);
+        currentUserEmail(authorization);
+        notificationService.deleteNotification(id);
         return ResponseEntity.noContent().build();
     }
 

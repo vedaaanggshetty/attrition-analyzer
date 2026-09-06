@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Owns identity: credentials (email + hashed password), roles, JWT issuance, and password reset. It does **not** own profile information (name, phone) — that's `user-profile-service`'s job, linked only by a shared `user_id` UUID.
+Owns identity: credentials (email + hashed password), roles, and JWT issuance. It does **not** own profile information (name, phone) — that's `user-profile-service`'s job, linked only by a shared `user_id` UUID.
 
 **Why identity and profile are split into two services instead of one "users" service:** they change for different reasons and have different sensitivity. Credentials (password hashes, tokens) need tight access control and rarely change; profile fields (name, phone) are edited far more often and have no security sensitivity. Splitting them means a bug or a future feature in profile editing can never accidentally touch how login/password-hashing works, and it mirrors a very common real-world pattern (identity provider vs. user-profile store) that this project deliberately follows at a smaller scale. The shared `user_id` UUID is the only thing connecting the two — Authentication doesn't know a user's name, and User Profile doesn't know their password hash.
 
-**What this service owns:** credential storage (`credentials` table), password hashing/verification, JWT signing, and the password-reset token lifecycle. **What it explicitly does not own:** full name, phone, or any other profile detail (user-profile-service's job — see [user-profile-service.md](user-profile-service.md)); it also does not decide *authorization* (which routes a role can access) — that's enforced at the Gateway (see [api-gateway.md](api-gateway.md)) and, redundantly, in this service's own `SecurityConfig`.
+**What this service owns:** credential storage (`credentials` table), password hashing/verification, and JWT signing. **What it explicitly does not own:** full name, phone, or any other profile detail (user-profile-service's job — see [user-profile-service.md](user-profile-service.md)); it also does not decide *authorization* (which routes a role can access) — that's enforced at the Gateway (see [api-gateway.md](api-gateway.md)) and, redundantly, in this service's own `SecurityConfig`.
 
 ## Architecture / packages
 
@@ -14,13 +14,13 @@ Owns identity: credentials (email + hashed password), roles, JWT issuance, and p
 |---|---|
 | `controller` | `AuthController` (public-facing), `InternalCredentialController` (service-to-service only) |
 | `service` | `AuthService` — all business logic |
-| `entity` | `Credential`, `PasswordResetToken`, `Role` (enum, currently only `HR`) |
-| `repository` | `CredentialRepository`, `PasswordResetTokenRepository` (Spring Data JPA) |
+| `entity` | `Credential`, `Role` (enum, currently only `HR`) |
+| `repository` | `CredentialRepository` (Spring Data JPA) |
 | `dto` | Request/response records for each endpoint |
-| `security` | `JwtService` (signs **and** verifies — the only service that signs), `JwtAuthenticationFilter`, `SecurityConfig`, `AuthenticatedUser`, `TokenHashUtil` |
-| `exception` | `DuplicateEmailException`, `InvalidCredentialsException`, `InvalidResetTokenException`, `GlobalExceptionHandler` |
+| `security` | `JwtService` (signs **and** verifies — the only service that signs), `JwtAuthenticationFilter`, `SecurityConfig`, `AuthenticatedUser` |
+| `exception` | `DuplicateEmailException`, `InvalidCredentialsException`, `GlobalExceptionHandler` |
 
-The package split follows a standard layered shape (controller → service → repository, with entities and DTOs kept separate) used consistently across every backend service in this project — a deliberate convention, not something unique to this service. `GlobalExceptionHandler` (a `@RestControllerAdvice`) is what turns exceptions into the correct HTTP status/JSON body — controllers and `AuthService` never build an `ErrorResponse` by hand, they just throw, and this one class centralizes the mapping: `InvalidCredentialsException` → `401`, `DuplicateEmailException` → `409 Conflict`, `InvalidResetTokenException` → `400 Bad Request`, and Bean Validation failures (`@Valid` on a request DTO, e.g. a malformed email or missing password) → `400` with the first field error's message. Every error response follows the same `ErrorResponse` shape (`timestamp`, `status`, `error`, `message`), which is why the frontend's `apiClient.ts` can handle every backend error generically instead of special-casing each service.
+The package split follows a standard layered shape (controller → service → repository, with entities and DTOs kept separate) used consistently across every backend service in this project — a deliberate convention, not something unique to this service. `GlobalExceptionHandler` (a `@RestControllerAdvice`) is what turns exceptions into the correct HTTP status/JSON body — controllers and `AuthService` never build an `ErrorResponse` by hand, they just throw, and this one class centralizes the mapping: `InvalidCredentialsException` → `401`, `DuplicateEmailException` → `409 Conflict`, and Bean Validation failures (`@Valid` on a request DTO, e.g. a malformed email or missing password) → `400` with the first field error's message. Every error response follows the same `ErrorResponse` shape (`timestamp`, `status`, `error`, `message`), which is why the frontend's `apiClient.ts` can handle every backend error generically instead of special-casing each service.
 
 ## Controllers and endpoints
 
@@ -30,8 +30,6 @@ The package split follows a standard layered shape (controller → service → r
 |---|---|---|---|
 | POST | `/auth/login` | No | `{email, password}` → `{token, tokenType, expiresInMs}` |
 | POST | `/auth/logout` | Yes | JWT is stateless — nothing to invalidate server-side. This endpoint exists only to satisfy US-03 and confirm the caller held a valid token at call time; the frontend doesn't actually call it, it just discards the token locally |
-| POST | `/auth/reset-password/request` | No | Starts a reset; always returns the same generic message regardless of whether the email exists, so the endpoint never reveals which emails are registered |
-| POST | `/auth/reset-password/confirm` | No | Completes a reset given a valid, unused, unexpired token |
 
 **Login, end to end:**
 
@@ -68,8 +66,6 @@ Note that a wrong email and a wrong password produce the **same** `InvalidCreden
 
 `Credential` (table `credentials` in `authentication_db`): `user_id` (UUID, PK), `email` (unique), `password_hash` (BCrypt, via Spring Security's `BCryptPasswordEncoder`), `role` (`Role.HR` — Guest is intentionally **not** a stored value; it's the absence of a credential/token, not a row), `created_at`.
 
-`PasswordResetToken`: token hash, `user_id`, `expires_at`, used flag.
-
 See [database.md](database.md) for the full schema table and how this database now lives inside the single shared `mysql-db` container.
 
 This service, and only this service, reads/writes `authentication_db` — no other service is granted access to it, even though they now share a physical MySQL server (see [database.md](database.md) for how the per-service users/grants enforce that). If another service needed to know something about a user's credential (e.g. "does this email exist"), it would have to ask this service through an API, never query the table directly — that boundary is what "each service owns its own data" means in practice here.
@@ -77,7 +73,7 @@ This service, and only this service, reads/writes `authentication_db` — no oth
 ## Security
 
 - **Signs** JWTs (the only service that does) — HMAC-SHA256 via `jjwt`, using the shared `JWT_SECRET`.
-- Own `SecurityFilterChain`: `/auth/login`, `/auth/reset-password/**`, `/internal/**`, `/actuator/**` are public; everything else requires a valid JWT (defense-in-depth — the Gateway also enforces this).
+- Own `SecurityFilterChain`: `/auth/login`, `/internal/**`, `/actuator/**` are public; everything else requires a valid JWT (defense-in-depth — the Gateway also enforces this).
 - Passwords are always `BCrypt`-hashed; the raw password is never persisted, logged, or returned in any response.
 
 **Why this service's own `SecurityFilterChain` re-checks auth when the Gateway already does it:** this is deliberate defense-in-depth, not redundant plumbing. The Gateway is the primary boundary and the one the frontend is expected to go through, but nothing at the network level stops a request from reaching this service's port directly (bypassing the Gateway) inside the Docker network, or in a future deployment where the Gateway's port might be misconfigured. If this service trusted every incoming request unconditionally, that would be a single point of failure — one Gateway misconfiguration and every service becomes wide open. Each service independently verifying the same JWT (with the same shared secret) means the Gateway being correct is a *convenience/single-entry-point*, not the *only* thing standing between an attacker and the data.
@@ -107,7 +103,7 @@ Waiting on the healthcheck (not just "container started") specifically prevents 
 | `AuthServiceTest` | Unit tests against mocked repositories |
 | `AuthServiceIntegrationTest` | Runs against an in-memory H2 database (`MODE=MySQL`) — doesn't need Docker/MySQL running |
 
-The split between `AuthServiceTest` (mocked repositories — fast, tests pure business logic like "does a wrong password throw `InvalidCredentialsException`") and `AuthServiceIntegrationTest` (a real, if in-memory, database) exists because some bugs only show up with real persistence behavior — e.g. the unique constraint on `email` actually being enforced, or a saved entity's `created_at` actually being populated by Hibernate. Using H2 in `MODE=MySQL` instead of a live MySQL container means these tests run in every environment (a laptop with no Docker running, CI) without sacrificing that real-persistence coverage. `SecurityChainIntegrationTest` proves the same kind of thing `api-gateway`'s equivalent test proves, but for this service's own (defense-in-depth) filter chain: that `/auth/login`, `/auth/reset-password/**`, `/internal/**`, and `/actuator/**` are genuinely public and everything else genuinely isn't.
+The split between `AuthServiceTest` (mocked repositories — fast, tests pure business logic like "does a wrong password throw `InvalidCredentialsException`") and `AuthServiceIntegrationTest` (a real, if in-memory, database) exists because some bugs only show up with real persistence behavior — e.g. the unique constraint on `email` actually being enforced, or a saved entity's `created_at` actually being populated by Hibernate. Using H2 in `MODE=MySQL` instead of a live MySQL container means these tests run in every environment (a laptop with no Docker running, CI) without sacrificing that real-persistence coverage. `SecurityChainIntegrationTest` proves the same kind of thing `api-gateway`'s equivalent test proves, but for this service's own (defense-in-depth) filter chain: that `/auth/login`, `/internal/**`, and `/actuator/**` are genuinely public and everything else genuinely isn't.
 
 ## How to explain this service in a presentation
 

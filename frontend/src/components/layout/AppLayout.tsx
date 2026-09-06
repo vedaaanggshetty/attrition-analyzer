@@ -1,4 +1,4 @@
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Avatar } from "../ui/Avatar";
 import { Wordmark } from "../ui/Wordmark";
@@ -81,8 +81,8 @@ function SidebarContent({
     <>
       <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
         {/* Logo — always shows the small dot, animates the text label out.
-            Branding only (not a navigation link) - clicking it does nothing. */}
-        <div className="flex items-center gap-2 px-2 py-1">
+            Links back to the public landing page. */}
+        <Link to="/" className="flex items-center gap-2 px-2 py-1">
           <span className="flex h-6 w-6 shrink-0 items-center justify-center">
             <span className="block h-2.5 w-2.5 rounded-full bg-brand-700" />
           </span>
@@ -92,7 +92,7 @@ function SidebarContent({
           >
             <Wordmark />
           </motion.span>
-        </div>
+        </Link>
 
         <nav className="mt-10 flex flex-col gap-1">
           {NAV_ITEMS.map((item) => (

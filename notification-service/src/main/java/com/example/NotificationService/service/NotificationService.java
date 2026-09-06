@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import com.example.NotificationService.dto.CreateNotificationRequest;
 import com.example.NotificationService.dto.NotificationDto;
@@ -27,6 +28,7 @@ public class NotificationService {
                 request.employeeName(),
                 request.department(),
                 hrUserEmail,
+                request.hrUserName(),
                 request.comment());
         notification = notificationRepository.save(notification);
         return toDto(notification);
@@ -47,14 +49,21 @@ public class NotificationService {
                 event.employeeName(),
                 event.department(),
                 event.hrUserEmail(),
+                event.hrUserName(),
                 event.comment(),
                 event.eventId());
         notificationRepository.save(notification);
         return true;
     }
 
-    public List<NotificationDto> getNotificationsForUser(String hrUserEmail) {
-        List<Notification> notifications = notificationRepository.findByHrUserEmailOrderByCreatedAtDesc(hrUserEmail);
+    /**
+     * Notifications are shared across every HR user - the caller's identity is
+     * no longer used to filter this list, only to identify who creates or
+     * reviews a notification (see {@link #createNotification} and
+     * {@link #markAsRead}).
+     */
+    public List<NotificationDto> getAllNotifications() {
+        List<Notification> notifications = notificationRepository.findAllByOrderByCreatedAtDesc();
 
         List<NotificationDto> result = new ArrayList<>();
         for (Notification notification : notifications) {
@@ -63,21 +72,43 @@ public class NotificationService {
         return result;
     }
 
-    public void deleteNotification(Long id, String hrUserEmail) {
-        Notification notification = notificationRepository.findById(id).orElse(null);
-        if (notification == null || !notification.getHrUserEmail().equals(hrUserEmail)) {
-            throw new NotificationNotFoundException();
-        }
+    /**
+     * Marks a notification as reviewed. Any authenticated HR user may review
+     * a notification - review state is shared, not private to the creator.
+     */
+    public NotificationDto markAsRead(Long id) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(NotificationNotFoundException::new);
+        notification.markRead();
+        notification = notificationRepository.save(notification);
+        return toDto(notification);
+    }
+
+    /**
+     * Deletes a notification. Delete is not restricted to the notification's
+     * creator - notifications are a shared HR resource, so any authenticated
+     * HR user may remove one.
+     */
+    public void deleteNotification(Long id) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(NotificationNotFoundException::new);
         notificationRepository.delete(notification);
     }
 
     private NotificationDto toDto(Notification notification) {
+        String senderName = StringUtils.hasText(notification.getHrUserName())
+                ? notification.getHrUserName()
+                : notification.getHrUserEmail();
+
         return new NotificationDto(
                 notification.getId(),
                 notification.getEmployeeId(),
                 notification.getEmployeeName(),
                 notification.getDepartment(),
                 notification.getComment(),
-                notification.getCreatedAt());
+                notification.getCreatedAt(),
+                notification.getHrUserEmail(),
+                senderName,
+                notification.isRead());
     }
 }

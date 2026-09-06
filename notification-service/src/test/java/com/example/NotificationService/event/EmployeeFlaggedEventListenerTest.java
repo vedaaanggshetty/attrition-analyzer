@@ -25,7 +25,8 @@ class EmployeeFlaggedEventListenerTest {
 
     private static EmployeeFlaggedEvent sampleEvent() {
         return new EmployeeFlaggedEvent(
-                UUID.randomUUID(), "5a94", "Leonelle Simco", "Sales", "Flight risk", "hr@example.com", Instant.now());
+                UUID.randomUUID(), "5a94", "Leonelle Simco", "Sales", "Flight risk", "hr@example.com", "HR User",
+                Instant.now());
     }
 
     @Test

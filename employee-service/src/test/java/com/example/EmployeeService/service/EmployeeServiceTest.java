@@ -112,7 +112,7 @@ class EmployeeServiceTest {
 		given(surveyApiClient.getEmployeeById("5a94")).willReturn(sampleResponse());
 
 		Optional<com.example.EmployeeService.event.EmployeeFlaggedEvent> result =
-				employeeService.flagEmployee("5a94", "Watch closely", "hr@example.com");
+				employeeService.flagEmployee("5a94", "Watch closely", "hr@example.com", "HR User");
 
 		assertThat(result).isPresent();
 		var event = result.get();
@@ -122,6 +122,7 @@ class EmployeeServiceTest {
 		assertThat(event.department()).isEqualTo("Sales");
 		assertThat(event.comment()).isEqualTo("Watch closely");
 		assertThat(event.hrUserEmail()).isEqualTo("hr@example.com");
+		assertThat(event.hrUserName()).isEqualTo("HR User");
 		assertThat(event.flaggedAt()).isNotNull();
 
 		then(eventProducer).should().publish(event);
@@ -132,7 +133,7 @@ class EmployeeServiceTest {
 		given(surveyApiClient.getEmployeeById("missing")).willThrow(feignError(404));
 
 		Optional<com.example.EmployeeService.event.EmployeeFlaggedEvent> result =
-				employeeService.flagEmployee("missing", "comment", "hr@example.com");
+				employeeService.flagEmployee("missing", "comment", "hr@example.com", "HR User");
 
 		assertThat(result).isEmpty();
 		then(eventProducer).shouldHaveNoInteractions();
@@ -144,7 +145,7 @@ class EmployeeServiceTest {
 		willThrow(new com.example.EmployeeService.exception.EventPublicationException("Kafka down", new RuntimeException()))
 				.given(eventProducer).publish(any());
 
-		assertThatThrownBy(() -> employeeService.flagEmployee("5a94", "comment", "hr@example.com"))
+		assertThatThrownBy(() -> employeeService.flagEmployee("5a94", "comment", "hr@example.com", "HR User"))
 				.isInstanceOf(com.example.EmployeeService.exception.EventPublicationException.class);
 	}
 

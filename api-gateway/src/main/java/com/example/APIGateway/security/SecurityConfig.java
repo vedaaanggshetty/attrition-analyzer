@@ -25,8 +25,8 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
-    // Public (no JWT required): login, public registration, password-reset
-    // request/confirm, and actuator health. Every other route proxied by
+    // Public (no JWT required): login, public registration, and actuator
+    // health. Every other route proxied by
     // this Gateway requires a valid JWT issued by Authentication Service,
     // validated by JwtAuthenticationFilter using the same shared signing
     // secret. Missing/invalid/expired tokens on protected routes return 401
@@ -43,7 +43,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/users/register").permitAll()
-                        .requestMatchers("/auth/reset-password/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         // US-21: Guests may view attrition analysis without logging in, but
                         // never individual employee records/search (/employees, /employees/{id})

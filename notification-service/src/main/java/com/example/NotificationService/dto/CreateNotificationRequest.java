@@ -22,6 +22,11 @@ public record CreateNotificationRequest(
 
         @NotBlank(message = "Comment is required")
         @Size(max = 1000, message = "Comment must be at most 1000 characters")
-        String comment
+        String comment,
+
+        // Optional - the sending HR user's display name, if the caller has one
+        // to send (the JWT itself only carries an email claim). Falls back to
+        // the email in the UI when absent.
+        String hrUserName
 ) {
 }

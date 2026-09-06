@@ -71,7 +71,7 @@ public class EmployeeController {
 			@Valid @RequestBody FlagEmployeeRequest request) {
 		String hrUserEmail = currentUserEmail(authorization);
 
-		Optional<EmployeeFlaggedEvent> event = employeeService.flagEmployee(id, request.comment(), hrUserEmail);
+		Optional<EmployeeFlaggedEvent> event = employeeService.flagEmployee(id, request.comment(), hrUserEmail, request.hrUserName());
 		return event
 				.<ResponseEntity<?>>map(e -> ResponseEntity.status(HttpStatus.ACCEPTED).body(e))
 				.orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)

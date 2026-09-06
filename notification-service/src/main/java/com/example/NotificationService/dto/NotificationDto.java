@@ -8,5 +8,8 @@ public record NotificationDto(
         String employeeName,
         String department,
         String comment,
-        Instant createdAt) {
+        Instant createdAt,
+        String senderEmail,
+        String senderName,
+        boolean read) {
 }

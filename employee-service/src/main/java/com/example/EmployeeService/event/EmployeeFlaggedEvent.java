@@ -15,5 +15,6 @@ public record EmployeeFlaggedEvent(
 		String department,
 		String comment,
 		String hrUserEmail,
+		String hrUserName,
 		Instant flaggedAt) {
 }

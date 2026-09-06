@@ -2,19 +2,13 @@ package com.example.AuthService.service;
 
 import com.example.AuthService.dto.LoginRequest;
 import com.example.AuthService.dto.LoginResponse;
-import com.example.AuthService.dto.PasswordResetConfirmRequest;
-import com.example.AuthService.dto.PasswordResetRequestRequest;
 import com.example.AuthService.dto.RegisterCredentialRequest;
 import com.example.AuthService.dto.RegisterCredentialResponse;
 import com.example.AuthService.entity.Credential;
-import com.example.AuthService.entity.PasswordResetToken;
 import com.example.AuthService.entity.Role;
 import com.example.AuthService.exception.DuplicateEmailException;
 import com.example.AuthService.exception.InvalidCredentialsException;
-import com.example.AuthService.exception.InvalidResetTokenException;
 import com.example.AuthService.repository.CredentialRepository;
-import com.example.AuthService.repository.PasswordResetTokenRepository;
-import com.example.AuthService.security.TokenHashUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +16,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,16 +46,11 @@ class AuthServiceIntegrationTest {
     private CredentialRepository credentialRepository;
 
     @Autowired
-    private PasswordResetTokenRepository passwordResetTokenRepository;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
-
-    private Credential seededCredential;
 
     @BeforeEach
     void seedCredential() {
-        seededCredential = credentialRepository.save(new Credential(
+        credentialRepository.save(new Credential(
                 UUID.randomUUID(),
                 EMAIL,
                 passwordEncoder.encode(RAW_PASSWORD),
@@ -115,65 +102,5 @@ class AuthServiceIntegrationTest {
 
         assertThatThrownBy(() -> authService.registerCredential(request))
                 .isInstanceOf(DuplicateEmailException.class);
-    }
-
-    @Test
-    void requestPasswordReset_withKnownEmail_persistsResetTokenForThatUser() {
-        authService.requestPasswordReset(new PasswordResetRequestRequest(EMAIL));
-
-        boolean hasTokenForUser = passwordResetTokenRepository.findAll().stream()
-                .anyMatch(t -> t.getUserId().equals(seededCredential.getUserId()));
-        assertThat(hasTokenForUser).isTrue();
-    }
-
-    @Test
-    void requestPasswordReset_withUnknownEmail_doesNotPersistToken() {
-        long before = passwordResetTokenRepository.count();
-
-        authService.requestPasswordReset(new PasswordResetRequestRequest("no-such-user@example.com"));
-
-        assertThat(passwordResetTokenRepository.count()).isEqualTo(before);
-    }
-
-    @Test
-    void confirmPasswordReset_withValidToken_updatesPasswordAndAllowsLoginWithNewPassword() {
-        String rawToken = "integration-valid-token";
-        passwordResetTokenRepository.save(new PasswordResetToken(
-                UUID.randomUUID(), seededCredential.getUserId(), TokenHashUtil.sha256Hex(rawToken),
-                Instant.now().plus(15, ChronoUnit.MINUTES)));
-
-        authService.confirmPasswordReset(new PasswordResetConfirmRequest(rawToken, "NewPassword123!"));
-
-        LoginResponse response = authService.login(new LoginRequest(EMAIL, "NewPassword123!"));
-        assertThat(response.token()).isNotBlank();
-
-        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, RAW_PASSWORD)))
-                .isInstanceOf(InvalidCredentialsException.class);
-    }
-
-    @Test
-    void confirmPasswordReset_withExpiredToken_throwsInvalidResetToken() {
-        String rawToken = "integration-expired-token";
-        passwordResetTokenRepository.save(new PasswordResetToken(
-                UUID.randomUUID(), seededCredential.getUserId(), TokenHashUtil.sha256Hex(rawToken),
-                Instant.now().minus(1, ChronoUnit.MINUTES)));
-
-        assertThatThrownBy(() -> authService.confirmPasswordReset(
-                new PasswordResetConfirmRequest(rawToken, "NewPassword123!")))
-                .isInstanceOf(InvalidResetTokenException.class);
-    }
-
-    @Test
-    void confirmPasswordReset_withAlreadyUsedToken_throwsInvalidResetToken() {
-        String rawToken = "integration-used-token";
-        PasswordResetToken resetToken = new PasswordResetToken(
-                UUID.randomUUID(), seededCredential.getUserId(), TokenHashUtil.sha256Hex(rawToken),
-                Instant.now().plus(15, ChronoUnit.MINUTES));
-        resetToken.markUsed();
-        passwordResetTokenRepository.save(resetToken);
-
-        assertThatThrownBy(() -> authService.confirmPasswordReset(
-                new PasswordResetConfirmRequest(rawToken, "NewPassword123!")))
-                .isInstanceOf(InvalidResetTokenException.class);
     }
 }

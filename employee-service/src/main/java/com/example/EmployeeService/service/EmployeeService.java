@@ -70,7 +70,7 @@ public class EmployeeService {
 	 * to consume. Returns empty if the employee doesn't exist, same contract
 	 * as {@link #getEmployeeById(String)}.
 	 */
-	public Optional<EmployeeFlaggedEvent> flagEmployee(String id, String comment, String hrUserEmail) {
+	public Optional<EmployeeFlaggedEvent> flagEmployee(String id, String comment, String hrUserEmail, String hrUserName) {
 		Optional<EmployeeDto> employee = getEmployeeById(id);
 		if (employee.isEmpty()) {
 			return Optional.empty();
@@ -84,6 +84,7 @@ public class EmployeeService {
 				dto.department(),
 				comment,
 				hrUserEmail,
+				hrUserName,
 				Instant.now());
 
 		eventProducer.publish(event);

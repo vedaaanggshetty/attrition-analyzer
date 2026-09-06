@@ -69,14 +69,6 @@ class SecurityChainIntegrationTest {
     }
 
     @Test
-    void resetPasswordRequest_isPubliclyAccessibleWithoutToken() throws Exception {
-        mockMvc.perform(post("/auth/reset-password/request")
-                        .contentType("application/json")
-                        .content("{\"email\":\"hr@example.com\"}"))
-                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(401));
-    }
-
-    @Test
     void unknownProtectedPath_withoutToken_isRejectedWith401() throws Exception {
         mockMvc.perform(get("/some/protected/path"))
                 .andExpect(status().isUnauthorized());

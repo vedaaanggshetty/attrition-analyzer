@@ -25,7 +25,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // /auth/login, /auth/reset-password/** and actuator stay public.
+    // /auth/login and actuator stay public.
     // /auth/logout requires a valid JWT (default "anyRequest().authenticated()"
     // rule) since it exists only to confirm a token was valid at call time.
     // Every other endpoint requires a valid JWT, validated by JwtAuthenticationFilter.
@@ -44,9 +44,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login").permitAll()
-                        .requestMatchers("/auth/reset-password/**").permitAll()
                         .requestMatchers("/internal/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

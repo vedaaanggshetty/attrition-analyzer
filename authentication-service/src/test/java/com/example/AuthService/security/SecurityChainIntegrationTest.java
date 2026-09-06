@@ -80,14 +80,6 @@ class SecurityChainIntegrationTest {
     }
 
     @Test
-    void resetPasswordRequest_isPubliclyAccessibleWithoutToken() throws Exception {
-        mockMvc.perform(post("/auth/reset-password/request")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"hr@example.com\"}"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
     void logout_withoutToken_isRejected() throws Exception {
         mockMvc.perform(post("/auth/logout"))
                 .andExpect(status().isForbidden());

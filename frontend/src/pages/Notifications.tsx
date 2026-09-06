@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { deleteNotification, getMyNotifications, type Notification } from "../lib/notificationApi";
+import {
+  deleteNotification,
+  getAllNotifications,
+  markNotificationRead,
+  type Notification,
+} from "../lib/notificationApi";
 import { getErrorMessage } from "../lib/apiClient";
 import { cx, formatRelativeTime } from "../lib/utils";
-import { useAuth } from "../context/AuthContext";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Avatar } from "../components/ui/Avatar";
 import { Skeleton } from "../components/ui/Skeleton";
+import { ReviewCheckbox } from "../components/ui/ReviewCheckbox";
 import { Bell, Clock, Building2, Trash2 } from "lucide-react";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -15,18 +20,16 @@ const WEEK_MS = 7 * DAY_MS;
 // HR-only page (US-21 keeps Guests off /notifications entirely via
 // ProtectedRoute + the Gateway's auth requirement on this route).
 export function Notifications() {
-  const { user } = useAuth();
-  const senderName = user?.fullName ?? user?.email ?? "You";
-
   const [notifications, setNotifications] = useState<Notification[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [reviewingId, setReviewingId] = useState<number | null>(null);
   // Snapshot "now" once per mount rather than calling Date.now() inline
   // during render (keeps recency checks pure/stable across re-renders).
   const [now] = useState(() => Date.now());
 
   useEffect(() => {
-    getMyNotifications()
+    getAllNotifications()
       .then(setNotifications)
       .catch((err) => setLoadError(getErrorMessage(err, "Couldn't load notifications.")));
   }, []);
@@ -40,6 +43,21 @@ export function Notifications() {
       // leave the row in place; the button re-enables so the user can retry
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function handleReview(note: Notification) {
+    if (note.read) return; // review is a one-way action, nothing to toggle back
+    setReviewingId(note.id);
+    // Optimistic - the checkmark/strike-through animation plays immediately.
+    setNotifications((prev) => prev?.map((n) => (n.id === note.id ? { ...n, read: true } : n)) ?? prev);
+    try {
+      await markNotificationRead(note.id);
+    } catch {
+      // roll back if the server call failed
+      setNotifications((prev) => prev?.map((n) => (n.id === note.id ? { ...n, read: false } : n)) ?? prev);
+    } finally {
+      setReviewingId(null);
     }
   }
 
@@ -58,7 +76,8 @@ export function Notifications() {
       (acc, n) => (!acc || new Date(n.createdAt) > new Date(acc.createdAt) ? n : acc),
       null
     );
-    return { total: notifications.length, last24h: last24h.length, last7d: last7d.length, departments, byDepartment, latest };
+    const unread = notifications.filter((n) => !n.read).length;
+    return { total: notifications.length, last24h: last24h.length, last7d: last7d.length, departments, byDepartment, latest, unread };
   }, [notifications, now]);
 
   if (loadError) {
@@ -98,13 +117,9 @@ export function Notifications() {
           {/* ── Stats: inline, divided by thin rules, no cards ────── */}
           <div className="flex flex-wrap items-stretch divide-x divide-white/15 lg:shrink-0">
             <HeaderStat label="Total" value={stats?.total} />
-            <HeaderStat label="Last 24h" value={stats?.last24h} accent />
+            <HeaderStat label="Unread" value={stats?.unread} accent />
+            <HeaderStat label="Last 24h" value={stats?.last24h} />
             <HeaderStat label="This week" value={stats?.last7d} />
-            <HeaderStat
-              label="Latest"
-              value={stats?.latest ? formatRelativeTime(stats.latest.createdAt) : undefined}
-              isText
-            />
           </div>
         </div>
       </div>
@@ -134,11 +149,12 @@ export function Notifications() {
                 <TimelineRow
                   key={note.id}
                   note={note}
-                  senderName={senderName}
                   now={now}
                   isLast={i === notifications.length - 1}
                   onDelete={() => handleDelete(note.id)}
                   deleting={deletingId === note.id}
+                  onReview={() => handleReview(note)}
+                  reviewing={reviewingId === note.id}
                 />
               ))}
             </ol>
@@ -270,18 +286,20 @@ function HeaderStat({
 // overflow action that only shows up on that row.
 function TimelineRow({
   note,
-  senderName,
   now,
   isLast,
   onDelete,
   deleting,
+  onReview,
+  reviewing,
 }: {
   note: Notification;
-  senderName: string;
   now: number;
   isLast: boolean;
   onDelete: () => void;
   deleting: boolean;
+  onReview: () => void;
+  reviewing: boolean;
 }) {
   const isNew = now - new Date(note.createdAt).getTime() < DAY_MS;
   const timeLabel = new Date(note.createdAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
@@ -290,7 +308,7 @@ function TimelineRow({
     <li className="group/row relative">
       <div
         className={cx(
-          "grid grid-cols-[44px_16px_1fr_28px] items-start gap-x-2.5 rounded-2xl px-2.5 py-3 transition-all duration-200 sm:grid-cols-[64px_16px_1fr_28px] sm:gap-x-3.5 sm:px-3",
+          "grid grid-cols-[44px_16px_1fr_auto] items-start gap-x-2.5 rounded-2xl px-2.5 py-3 transition-all duration-200 sm:grid-cols-[64px_16px_1fr_auto] sm:gap-x-3.5 sm:px-3",
           "hover:bg-gradient-to-r hover:from-white hover:to-brand-50/50 hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_20px_-12px_rgba(0,0,0,0.18)] hover:ring-1 hover:ring-brand-900/[0.06]",
           "focus-within:bg-gradient-to-r focus-within:from-white focus-within:to-brand-50/50 focus-within:ring-1 focus-within:ring-brand-900/[0.06]"
         )}
@@ -303,7 +321,7 @@ function TimelineRow({
           <span
             className={cx(
               "mt-1.5 h-2 w-2 shrink-0 rounded-full ring-4 ring-white",
-              isNew ? "bg-brand-500" : "bg-neutral-300"
+              !note.read ? "bg-brand-500" : isNew ? "bg-brand-300" : "bg-neutral-300"
             )}
           />
           {!isLast && <span className="mt-1 w-px flex-1 bg-neutral-200" />}
@@ -314,15 +332,18 @@ function TimelineRow({
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 sm:hidden">
             <span className="text-xs font-medium text-neutral-400">{timeLabel}</span>
           </div>
-          <p className="text-sm font-semibold text-ink-900">{note.employeeName}</p>
-          <p className="mt-0.5 line-clamp-2 text-sm leading-relaxed text-neutral-600">{note.comment}</p>
+          <p className={cx("text-sm font-semibold", note.read ? "text-neutral-500" : "text-ink-900")}>{note.employeeName}</p>
+          <p className={cx("mt-0.5 line-clamp-2 text-sm leading-relaxed", note.read ? "text-neutral-400" : "text-neutral-600")}>{note.comment}</p>
           <p className="mt-1 text-xs text-neutral-400">
-            {note.department} · Sent by {senderName}
+            {note.department} · Sent by {note.senderName}
           </p>
         </Link>
 
-        {/* delete action - only visible on hover/focus of this row */}
-        <div className="relative flex justify-end pt-0.5">
+        {/* review + delete actions */}
+        <div className="flex items-start gap-2 pt-0.5">
+          <ReviewCheckbox checked={note.read} onChange={onReview} disabled={reviewing || note.read} />
+
+          {/* Delete: always visible, deliberately prominent - not a hidden hover affordance */}
           <button
             type="button"
             onClick={(e) => {
@@ -332,9 +353,10 @@ function TimelineRow({
             disabled={deleting}
             aria-label="Delete notification"
             title="Delete notification"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-300 opacity-0 transition-all duration-200 hover:bg-red-50 hover:text-red-500 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:opacity-30 group-hover/row:opacity-100 group-focus-within/row:opacity-100"
+            className="flex h-8 items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 text-xs font-semibold text-red-600 transition-all duration-150 hover:border-red-300 hover:bg-red-100 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:opacity-40"
           >
-            <Trash2 className="h-4 w-4" strokeWidth={2} />
+            <Trash2 className="h-3.5 w-3.5" strokeWidth={2.25} />
+            <span className="hidden sm:inline">Delete</span>
           </button>
         </div>
       </div>

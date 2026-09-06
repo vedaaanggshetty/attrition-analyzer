@@ -44,8 +44,24 @@ public class Notification {
     @Column(name = "hr_user_email", nullable = false)
     private String hrUserEmail;
 
+    // Display name of the HR user who sent this, captured once at creation
+    // time (same reasoning as employeeName/department above) since the JWT
+    // itself doesn't carry a name claim. Nullable - notifications created
+    // before this field existed, or without a name available, fall back to
+    // showing hrUserEmail in the UI instead.
+    @Column(name = "hr_user_name")
+    private String hrUserName;
+
     @Column(nullable = false, length = 1000)
     private String comment;
+
+    // Notifications are shared across all HR users (not private to their
+    // creator) - "read" tracks whether any HR user has reviewed it yet, as a
+    // single shared flag on the notification itself rather than per-user state.
+    // Mapped to "is_read", not "read" - READ is a reserved word in MySQL and
+    // produces a SQL syntax error if used unquoted as a column name.
+    @Column(name = "is_read", nullable = false)
+    private boolean read = false;
 
     // Idempotency key for notifications created from a Kafka EmployeeFlaggedEvent.
     // Null for notifications created via the direct POST /notifications flow,
@@ -63,16 +79,17 @@ public class Notification {
     }
 
     public Notification(String employeeId, String employeeName, String department, String hrUserEmail,
-            String comment) {
-        this(employeeId, employeeName, department, hrUserEmail, comment, null);
+            String hrUserName, String comment) {
+        this(employeeId, employeeName, department, hrUserEmail, hrUserName, comment, null);
     }
 
     public Notification(String employeeId, String employeeName, String department, String hrUserEmail,
-            String comment, UUID eventId) {
+            String hrUserName, String comment, UUID eventId) {
         this.employeeId = employeeId;
         this.employeeName = employeeName;
         this.department = department;
         this.hrUserEmail = hrUserEmail;
+        this.hrUserName = hrUserName;
         this.comment = comment;
         this.eventId = eventId;
     }
@@ -97,6 +114,10 @@ public class Notification {
         return hrUserEmail;
     }
 
+    public String getHrUserName() {
+        return hrUserName;
+    }
+
     public String getComment() {
         return comment;
     }
@@ -107,5 +128,13 @@ public class Notification {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public boolean isRead() {
+        return read;
+    }
+
+    public void markRead() {
+        this.read = true;
     }
 }

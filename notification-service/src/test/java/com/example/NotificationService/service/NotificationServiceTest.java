@@ -40,13 +40,13 @@ class NotificationServiceTest {
     }
 
     private static Notification sampleNotification(String owner) {
-        return new Notification("5a94", "Leonelle Simco", "Sales", owner, "Flight risk, discuss retention");
+        return new Notification("5a94", "Leonelle Simco", "Sales", owner, "HR User", "Flight risk, discuss retention");
     }
 
     @Test
     void createNotificationSavesAndReturnsNotificationForCurrentUser() {
         CreateNotificationRequest request = new CreateNotificationRequest(
-                "5a94", "Leonelle Simco", "Sales", "Flight risk, discuss retention");
+                "5a94", "Leonelle Simco", "Sales", "Flight risk, discuss retention", "HR User");
         ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
         given(notificationRepository.save(captor.capture())).willAnswer(invocation -> invocation.getArgument(0));
 
@@ -57,17 +57,19 @@ class NotificationServiceTest {
         assertThat(saved.getEmployeeName()).isEqualTo("Leonelle Simco");
         assertThat(saved.getDepartment()).isEqualTo("Sales");
         assertThat(saved.getHrUserEmail()).isEqualTo("hr@example.com");
+        assertThat(saved.getHrUserName()).isEqualTo("HR User");
         assertThat(saved.getComment()).isEqualTo("Flight risk, discuss retention");
 
         assertThat(result.employeeName()).isEqualTo("Leonelle Simco");
         assertThat(result.comment()).isEqualTo("Flight risk, discuss retention");
+        assertThat(result.senderName()).isEqualTo("HR User");
     }
 
     @Test
     void createFromEventSavesNotificationWithEventId() {
         UUID eventId = UUID.randomUUID();
         EmployeeFlaggedEvent event = new EmployeeFlaggedEvent(
-                eventId, "5a94", "Leonelle Simco", "Sales", "Flight risk", "hr@example.com", Instant.now());
+                eventId, "5a94", "Leonelle Simco", "Sales", "Flight risk", "hr@example.com", "HR User", Instant.now());
         given(notificationRepository.existsByEventId(eventId)).willReturn(false);
         ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
         given(notificationRepository.save(captor.capture())).willAnswer(invocation -> invocation.getArgument(0));
@@ -79,13 +81,14 @@ class NotificationServiceTest {
         assertThat(saved.getEventId()).isEqualTo(eventId);
         assertThat(saved.getEmployeeName()).isEqualTo("Leonelle Simco");
         assertThat(saved.getHrUserEmail()).isEqualTo("hr@example.com");
+        assertThat(saved.getHrUserName()).isEqualTo("HR User");
     }
 
     @Test
     void createFromEventIsNoOpForDuplicateEventId() {
         UUID eventId = UUID.randomUUID();
         EmployeeFlaggedEvent event = new EmployeeFlaggedEvent(
-                eventId, "5a94", "Leonelle Simco", "Sales", "Flight risk", "hr@example.com", Instant.now());
+                eventId, "5a94", "Leonelle Simco", "Sales", "Flight risk", "hr@example.com", "HR User", Instant.now());
         given(notificationRepository.existsByEventId(eventId)).willReturn(true);
 
         boolean created = notificationService.createFromEvent(event);
@@ -95,30 +98,62 @@ class NotificationServiceTest {
     }
 
     @Test
-    void getNotificationsForUserReturnsMappedList() {
-        given(notificationRepository.findByHrUserEmailOrderByCreatedAtDesc("hr@example.com"))
-                .willReturn(List.of(sampleNotification("hr@example.com")));
+    void getAllNotificationsReturnsMappedListRegardlessOfCreator() {
+        given(notificationRepository.findAllByOrderByCreatedAtDesc())
+                .willReturn(List.of(sampleNotification("someone-else@example.com")));
 
-        List<NotificationDto> result = notificationService.getNotificationsForUser("hr@example.com");
+        List<NotificationDto> result = notificationService.getAllNotifications();
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).employeeName()).isEqualTo("Leonelle Simco");
         assertThat(result.get(0).comment()).isEqualTo("Flight risk, discuss retention");
+        assertThat(result.get(0).senderEmail()).isEqualTo("someone-else@example.com");
     }
 
     @Test
-    void getNotificationsForUserReturnsEmptyListWhenUserHasNone() {
-        given(notificationRepository.findByHrUserEmailOrderByCreatedAtDesc("hr@example.com")).willReturn(List.of());
+    void getAllNotificationsFallsBackToEmailWhenNameMissing() {
+        Notification notification = new Notification(
+                "5a94", "Leonelle Simco", "Sales", "someone-else@example.com", null, "Flight risk, discuss retention");
+        given(notificationRepository.findAllByOrderByCreatedAtDesc()).willReturn(List.of(notification));
 
-        assertThat(notificationService.getNotificationsForUser("hr@example.com")).isEmpty();
+        List<NotificationDto> result = notificationService.getAllNotifications();
+
+        assertThat(result.get(0).senderName()).isEqualTo("someone-else@example.com");
     }
 
     @Test
-    void deleteNotificationRemovesOwnNotification() {
+    void getAllNotificationsReturnsEmptyListWhenNoneExist() {
+        given(notificationRepository.findAllByOrderByCreatedAtDesc()).willReturn(List.of());
+
+        assertThat(notificationService.getAllNotifications()).isEmpty();
+    }
+
+    @Test
+    void markAsReadSetsReadFlag() {
         Notification notification = sampleNotification("hr@example.com");
         given(notificationRepository.findById(1L)).willReturn(Optional.of(notification));
+        given(notificationRepository.save(notification)).willReturn(notification);
 
-        notificationService.deleteNotification(1L, "hr@example.com");
+        NotificationDto result = notificationService.markAsRead(1L);
+
+        assertThat(notification.isRead()).isTrue();
+        assertThat(result.read()).isTrue();
+    }
+
+    @Test
+    void markAsReadThrowsWhenNotFound() {
+        given(notificationRepository.findById(99L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> notificationService.markAsRead(99L))
+                .isInstanceOf(NotificationNotFoundException.class);
+    }
+
+    @Test
+    void deleteNotificationRemovesNotificationRegardlessOfCreator() {
+        Notification notification = sampleNotification("someone-else@example.com");
+        given(notificationRepository.findById(1L)).willReturn(Optional.of(notification));
+
+        notificationService.deleteNotification(1L);
 
         verify(notificationRepository).delete(notification);
     }
@@ -127,18 +162,7 @@ class NotificationServiceTest {
     void deleteNotificationThrowsWhenNotFound() {
         given(notificationRepository.findById(99L)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> notificationService.deleteNotification(99L, "hr@example.com"))
+        assertThatThrownBy(() -> notificationService.deleteNotification(99L))
                 .isInstanceOf(NotificationNotFoundException.class);
-    }
-
-    @Test
-    void deleteNotificationThrowsWhenOwnedByAnotherUser() {
-        Notification notification = sampleNotification("someone-else@example.com");
-        given(notificationRepository.findById(1L)).willReturn(Optional.of(notification));
-
-        assertThatThrownBy(() -> notificationService.deleteNotification(1L, "hr@example.com"))
-                .isInstanceOf(NotificationNotFoundException.class);
-
-        verify(notificationRepository, never()).delete(any());
     }
 }

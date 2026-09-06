@@ -11,7 +11,7 @@ import {
   type AttritionAnalysis,
   type Employee,
 } from "../lib/employeeApi";
-import { deleteNotification, getMyNotifications, type Notification } from "../lib/notificationApi";
+import { deleteNotification, getAllNotifications, type Notification } from "../lib/notificationApi";
 import { getErrorMessage } from "../lib/apiClient";
 import { cx, formatRelativeTime } from "../lib/utils";
 import { useAuth } from "../context/AuthContext";
@@ -101,7 +101,7 @@ export function Dashboard() {
         window.setTimeout(() => setLoading(false), 480);
       });
 
-    getMyNotifications()
+    getAllNotifications()
       .then(setNotifications)
       .catch(() => setNotifications([]));
   }, []);
@@ -389,90 +389,91 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* ── Top Attrition Groups ─────────────────────────────────────── */}
-      <div className="animate-section py-10" style={{ animationDelay: "400ms" }}>
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-ink-900">Top Attrition Groups</h2>
-          <p className="mt-0.5 text-sm text-neutral-400">Highest-attrition group in each of the six analyses</p>
-        </div>
-        
-        {!topGroups ? (
-          <WatchlistSkeleton />
-        ) : topGroups.length === 0 ? (
-          <p className="text-sm text-neutral-500">No analysis data available.</p>
-        ) : (
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {topGroups.map((g) => {
-              const s = severity(g.row.attritionRate);
-              return (
-                <Link
-                  key={g.anchor}
-                  to={`/employees?${g.queryKey}=${encodeURIComponent(g.row.groupLabel)}`}
-                  className="group flex flex-col justify-between border border-neutral-200 bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:border-neutral-300 hover:shadow-lg lg:p-6"
-                >
-                  <div className="mb-4 min-w-0 w-full">
-                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 line-clamp-1">{g.label}</p>
-                    <p className="truncate text-lg font-medium text-ink-900">{g.row.groupLabel}</p>
-                  </div>
-                  <div className="mt-auto flex w-full items-end justify-between">
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-300">Rate</span>
-                    <span className={cx("num text-2xl font-bold leading-none", SEVERITY_TEXT[s])}>
-                      {fmt(g.row.attritionRate)}%
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
+      {/* ── Top Attrition Groups + Notifications panel ──────────────── */}
+      <div className="animate-section grid grid-cols-1 gap-10 py-10 lg:grid-cols-2" style={{ animationDelay: "400ms" }}>
+        {/* Left half: Top Attrition Groups, 3-column grid with subtle dividers */}
+        <div>
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-ink-900">Top Attrition Groups</h2>
+            <p className="mt-0.5 text-sm text-neutral-400">Highest-attrition group in each of the six analyses</p>
           </div>
-        )}
-      </div>
 
-      {/* ── Notifications ────────────────────────────────────────────── */}
-      <div className="animate-section pb-10 pt-4" style={{ animationDelay: "500ms" }}>
-        <div className="glass-card-dark rounded-xl p-6 text-white md:max-w-xl">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-white">Recent Notifications</h2>
-            <Link to="/notifications" className="text-xs text-white/50 hover:text-white transition-colors">
-              View all →
-            </Link>
-          </div>
-          <p className="mb-5 text-xs text-white/40">Notes sent to the HR team</p>
-          {!notifications ? (
-            <ActivitySkeleton />
-          ) : notifications.length === 0 ? (
-            <p className="text-sm text-white/40">No notifications yet. Send one from an employee's detail page.</p>
+          {!topGroups ? (
+            <WatchlistSkeleton />
+          ) : topGroups.length === 0 ? (
+            <p className="text-sm text-neutral-500">No analysis data available.</p>
           ) : (
-            <div className="flex flex-col gap-1.5">
-              {notifications.slice(0, 5).map((note) => (
-                <div
-                  key={note.id}
-                  className="group flex items-start gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-white/5"
-                >
-                  <Avatar
-                    firstName={note.employeeName.split(" ")[0]}
-                    lastName={note.employeeName.split(" ")[1] ?? ""}
-                    size="sm"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-baseline gap-2">
-                      <span className="text-sm font-semibold text-white">{note.employeeName}</span>
-                      <span className="text-xs text-white/35">{formatRelativeTime(note.createdAt)}</span>
-                    </div>
-                    <p className="mt-1 line-clamp-2 text-sm leading-snug text-white/55">{note.comment}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteNotification(note.id)}
-                    disabled={deletingId === note.id}
-                    aria-label="Dismiss"
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-white/30 opacity-0 transition-all hover:bg-white/10 hover:text-white group-hover:opacity-100 disabled:opacity-30"
+            <div className="grid grid-cols-1 divide-y divide-neutral-100 border-t border-neutral-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:border-t-0">
+              {topGroups.map((g) => {
+                const s = severity(g.row.attritionRate);
+                return (
+                  <Link
+                    key={g.anchor}
+                    to={`/employees?${g.queryKey}=${encodeURIComponent(g.row.groupLabel)}`}
+                    className="group flex flex-col justify-between py-5 transition-colors sm:px-5 sm:first:pl-0 sm:last:pr-0"
                   >
-                    <XIcon className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
+                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 line-clamp-1">{g.label}</p>
+                    <p className="truncate text-base font-medium text-ink-900 transition-colors group-hover:text-brand-700">{g.row.groupLabel}</p>
+                    <div className="mt-4 flex items-end justify-between">
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-300">Rate</span>
+                      <span className={cx("num text-xl font-bold leading-none", SEVERITY_TEXT[s])}>
+                        {fmt(g.row.attritionRate)}%
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           )}
+        </div>
+
+        {/* Right half: Notifications — an intentional contextual side panel */}
+        <div>
+          <div className="glass-card-dark h-full rounded-xl p-6 text-white">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-white">Recent Notifications</h2>
+              <Link to="/notifications" className="text-xs text-white/50 hover:text-white transition-colors">
+                View all →
+              </Link>
+            </div>
+            <p className="mb-5 text-xs text-white/40">Notes sent to the HR team</p>
+            {!notifications ? (
+              <ActivitySkeleton />
+            ) : notifications.length === 0 ? (
+              <p className="text-sm text-white/40">No notifications yet. Send one from an employee's detail page.</p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {notifications.slice(0, 5).map((note) => (
+                  <div
+                    key={note.id}
+                    className="group flex items-start gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-white/5"
+                  >
+                    <Avatar
+                      firstName={note.employeeName.split(" ")[0]}
+                      lastName={note.employeeName.split(" ")[1] ?? ""}
+                      size="sm"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <span className="text-sm font-semibold text-white">{note.employeeName}</span>
+                        <span className="text-xs text-white/35">{formatRelativeTime(note.createdAt)}</span>
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-sm leading-snug text-white/55">{note.comment}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteNotification(note.id)}
+                      disabled={deletingId === note.id}
+                      aria-label="Dismiss"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-white/30 opacity-0 transition-all hover:bg-white/10 hover:text-white group-hover:opacity-100 disabled:opacity-30"
+                    >
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

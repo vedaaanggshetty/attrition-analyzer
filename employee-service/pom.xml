@@ -56,6 +56,12 @@
 			<artifactId>spring-boot-starter-kafka</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>3.0.0</version>
+		</dependency>
+
 		<!-- Reads the HR user's email out of the Authorization header on
 		     POST /employees/{id}/flag; same library/version Notification Service
 		     uses to verify tokens issued by Authentication Service. -->

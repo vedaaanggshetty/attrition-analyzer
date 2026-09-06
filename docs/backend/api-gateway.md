@@ -30,7 +30,6 @@ The Gateway is where guest-vs-HR access is actually enforced — not in the fron
 ```java
 .requestMatchers("/auth/login").permitAll()
 .requestMatchers("/users/register").permitAll()
-.requestMatchers("/auth/reset-password/**").permitAll()
 .requestMatchers("/actuator/**").permitAll()
 .requestMatchers(HttpMethod.GET, "/employees/analysis/**").permitAll()
 .anyRequest().authenticated()

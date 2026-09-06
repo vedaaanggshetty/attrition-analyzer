@@ -4,6 +4,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,14 +43,15 @@ class NotificationControllerTest {
 
     private static NotificationDto sampleNotification() {
         return new NotificationDto(1L, "5a94", "Leonelle Simco", "Sales",
-                "Flight risk, discuss retention", Instant.parse("2026-01-01T00:00:00Z"));
+                "Flight risk, discuss retention", Instant.parse("2026-01-01T00:00:00Z"),
+                "hr@example.com", "HR User", false);
     }
 
     @Test
     void createNotificationReturns201WithCreatedNotification() throws Exception {
         given(jwtService.extractEmail("valid-token")).willReturn("hr@example.com");
         CreateNotificationRequest request = new CreateNotificationRequest(
-                "5a94", "Leonelle Simco", "Sales", "Flight risk, discuss retention");
+                "5a94", "Leonelle Simco", "Sales", "Flight risk, discuss retention", "HR User");
         given(notificationService.createNotification(request, "hr@example.com")).willReturn(sampleNotification());
 
         mockMvc.perform(post("/notifications")
@@ -64,7 +66,7 @@ class NotificationControllerTest {
     @Test
     void createNotificationWithoutTokenReturns401() throws Exception {
         CreateNotificationRequest request = new CreateNotificationRequest(
-                "5a94", "Leonelle Simco", "Sales", "Flight risk, discuss retention");
+                "5a94", "Leonelle Simco", "Sales", "Flight risk, discuss retention", "HR User");
 
         mockMvc.perform(post("/notifications")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -75,7 +77,7 @@ class NotificationControllerTest {
     @Test
     void createNotificationWithBlankCommentReturns400() throws Exception {
         given(jwtService.extractEmail("valid-token")).willReturn("hr@example.com");
-        CreateNotificationRequest request = new CreateNotificationRequest("5a94", "Leonelle Simco", "Sales", " ");
+        CreateNotificationRequest request = new CreateNotificationRequest("5a94", "Leonelle Simco", "Sales", " ", "HR User");
 
         mockMvc.perform(post("/notifications")
                         .header("Authorization", "Bearer valid-token")
@@ -85,20 +87,21 @@ class NotificationControllerTest {
     }
 
     @Test
-    void getMyNotificationsReturnsCurrentUsersNotifications() throws Exception {
+    void getAllNotificationsReturnsSharedList() throws Exception {
         given(jwtService.extractEmail("valid-token")).willReturn("hr@example.com");
-        given(notificationService.getNotificationsForUser("hr@example.com")).willReturn(List.of(sampleNotification()));
+        given(notificationService.getAllNotifications()).willReturn(List.of(sampleNotification()));
 
         mockMvc.perform(get("/notifications").header("Authorization", "Bearer valid-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].employeeName").value("Leonelle Simco"))
-                .andExpect(jsonPath("$[0].comment").value("Flight risk, discuss retention"));
+                .andExpect(jsonPath("$[0].comment").value("Flight risk, discuss retention"))
+                .andExpect(jsonPath("$[0].senderEmail").value("hr@example.com"));
     }
 
     @Test
-    void getMyNotificationsReturnsEmptyListWhenUserHasNone() throws Exception {
+    void getAllNotificationsReturnsEmptyListWhenNoneExist() throws Exception {
         given(jwtService.extractEmail("valid-token")).willReturn("hr@example.com");
-        given(notificationService.getNotificationsForUser("hr@example.com")).willReturn(List.of());
+        given(notificationService.getAllNotifications()).willReturn(List.of());
 
         mockMvc.perform(get("/notifications").header("Authorization", "Bearer valid-token"))
                 .andExpect(status().isOk())
@@ -106,9 +109,22 @@ class NotificationControllerTest {
     }
 
     @Test
-    void getMyNotificationsWithoutTokenReturns401() throws Exception {
+    void getAllNotificationsWithoutTokenReturns401() throws Exception {
         mockMvc.perform(get("/notifications"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void markAsReadReturnsUpdatedNotification() throws Exception {
+        given(jwtService.extractEmail("valid-token")).willReturn("hr@example.com");
+        NotificationDto readNotification = new NotificationDto(1L, "5a94", "Leonelle Simco", "Sales",
+                "Flight risk, discuss retention", Instant.parse("2026-01-01T00:00:00Z"),
+                "hr@example.com", "HR User", true);
+        given(notificationService.markAsRead(1L)).willReturn(readNotification);
+
+        mockMvc.perform(patch("/notifications/1/read").header("Authorization", "Bearer valid-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.read").value(true));
     }
 
     @Test
@@ -120,10 +136,10 @@ class NotificationControllerTest {
     }
 
     @Test
-    void deleteNotificationReturns404WhenNotFoundOrNotOwned() throws Exception {
+    void deleteNotificationReturns404WhenNotFound() throws Exception {
         given(jwtService.extractEmail("valid-token")).willReturn("hr@example.com");
         doThrow(new NotificationNotFoundException())
-                .when(notificationService).deleteNotification(99L, "hr@example.com");
+                .when(notificationService).deleteNotification(99L);
 
         mockMvc.perform(delete("/notifications/99").header("Authorization", "Bearer valid-token"))
                 .andExpect(status().isNotFound());

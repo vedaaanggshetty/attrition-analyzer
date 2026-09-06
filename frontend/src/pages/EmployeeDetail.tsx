@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion, MotionConfig } from "framer-motion";
 import { getEmployeeById, flagEmployee, type Employee } from "../lib/employeeApi";
-import { getMyNotifications, type Notification } from "../lib/notificationApi";
+import { getAllNotifications, type Notification } from "../lib/notificationApi";
 import { avatarColorFor, salaryBandLabel, promotionBandLabel } from "../lib/employeeDisplay";
 import { useAuth } from "../context/AuthContext";
 import { getErrorMessage } from "../lib/apiClient";
@@ -36,7 +36,7 @@ export function EmployeeDetail() {
 
   useEffect(() => {
     if (!employee) return;
-    getMyNotifications()
+    getAllNotifications()
       .then((all) => setNotes(all.filter((n) => n.employeeId === employee.employeeId)))
       .catch(() => {
         // Notes are a secondary detail on this page; a failed fetch here
@@ -100,7 +100,7 @@ export function EmployeeDetail() {
     setFlagging(true);
     setFlagError(null);
     try {
-      await flagEmployee(employee.id, comment.trim());
+      await flagEmployee(employee.id, comment.trim(), user?.fullName ?? user?.email);
       setNotes((prev) => [
         {
           id: Date.now(),
@@ -109,6 +109,9 @@ export function EmployeeDetail() {
           department: employee.department,
           comment: comment.trim(),
           createdAt: new Date().toISOString(),
+          senderEmail: user?.email ?? "you",
+          senderName: user?.fullName ?? user?.email ?? "you",
+          read: false,
         },
         ...prev,
       ]);

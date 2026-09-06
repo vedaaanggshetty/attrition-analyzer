@@ -7,5 +7,12 @@ public record FlagEmployeeRequest(
 
 		@NotBlank(message = "Comment is required")
 		@Size(max = 1000, message = "Comment must be at most 1000 characters")
-		String comment) {
+		String comment,
+
+		// The flagging HR user's display name, sent by the frontend (it already
+		// holds this from the profile it fetched at login) since the JWT itself
+		// only carries an email claim, not a name - see Notification's
+		// hrUserName field for why this is captured once here rather than
+		// looked up cross-service later.
+		String hrUserName) {
 }

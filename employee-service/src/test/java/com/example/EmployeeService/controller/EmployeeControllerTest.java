@@ -109,8 +109,8 @@ class EmployeeControllerTest {
 		given(jwtService.extractEmail("token")).willReturn("hr@example.com");
 		EmployeeFlaggedEvent event = new EmployeeFlaggedEvent(
 				UUID.randomUUID(), "3012-1A41", "Leonelle Simco", "Sales", "Watch closely",
-				"hr@example.com", Instant.now());
-		given(employeeService.flagEmployee("5a94", "Watch closely", "hr@example.com"))
+				"hr@example.com", "HR User", Instant.now());
+		given(employeeService.flagEmployee("5a94", "Watch closely", "hr@example.com", null))
 				.willReturn(Optional.of(event));
 
 		mockMvc.perform(post("/employees/5a94/flag")
@@ -123,7 +123,7 @@ class EmployeeControllerTest {
 	@Test
 	void flagEmployeeReturns404WhenNotFound() throws Exception {
 		given(jwtService.extractEmail("token")).willReturn("hr@example.com");
-		given(employeeService.flagEmployee("missing", "Watch closely", "hr@example.com"))
+		given(employeeService.flagEmployee("missing", "Watch closely", "hr@example.com", null))
 				.willReturn(Optional.empty());
 
 		mockMvc.perform(post("/employees/missing/flag")
@@ -144,7 +144,7 @@ class EmployeeControllerTest {
 	@Test
 	void flagEmployeeReturns503WhenKafkaPublicationFails() throws Exception {
 		given(jwtService.extractEmail("token")).willReturn("hr@example.com");
-		given(employeeService.flagEmployee("5a94", "Watch closely", "hr@example.com"))
+		given(employeeService.flagEmployee("5a94", "Watch closely", "hr@example.com", null))
 				.willThrow(new com.example.EmployeeService.exception.EventPublicationException(
 						"Failed to publish EmployeeFlaggedEvent to Kafka", new RuntimeException()));
 

@@ -61,8 +61,8 @@ export function getEmployeeById(id: string): Promise<Employee | null> {
   });
 }
 
-export function flagEmployee(id: string, comment: string): Promise<FlagEmployeeResponse> {
-  return apiRequest<FlagEmployeeResponse>(`/employees/${id}/flag`, { method: "POST", body: { comment } });
+export function flagEmployee(id: string, comment: string, hrUserName?: string): Promise<FlagEmployeeResponse> {
+  return apiRequest<FlagEmployeeResponse>(`/employees/${id}/flag`, { method: "POST", body: { comment, hrUserName } });
 }
 
 export function getAttritionByDepartment(): Promise<AttritionAnalysis[]> {
