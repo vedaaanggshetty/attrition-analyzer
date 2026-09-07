@@ -25,8 +25,8 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
-    // Public (no JWT required): login, public registration, and actuator
-    // health. Every other route proxied by
+    // Public (no JWT required): login, public registration, actuator
+    // health, and the aggregated Swagger UI/docs proxy. Every other route proxied by
     // this Gateway requires a valid JWT issued by Authentication Service,
     // validated by JwtAuthenticationFilter using the same shared signing
     // secret. Missing/invalid/expired tokens on protected routes return 401
@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/users/register").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/docs/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         // US-21: Guests may view attrition analysis without logging in, but
                         // never individual employee records/search (/employees, /employees/{id})
                         // and never HR-only features (notifications) - those stay authenticated.

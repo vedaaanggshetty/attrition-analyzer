@@ -7,10 +7,16 @@ and a health endpoint to services that already existed.
 
 ## Which services
 
-Applies to the four business services - **authentication-service**, **user-profile-service**,
-**employee-service**, **notification-service**. `discovery-service` (Eureka's own dashboard, not a
-REST API to document) and `api-gateway` (a router, not a set of business endpoints) are
-intentionally excluded, same as they're excluded from the per-service test requirement.
+Full per-endpoint OpenAPI annotation (`@Tag`/`@Operation`/`@ApiResponses`/`@Schema`/etc., see
+below) applies to the four business services - **authentication-service**,
+**user-profile-service**, **employee-service**, **notification-service**. `discovery-service`
+(Eureka's own dashboard, not a REST API to document) has no Swagger of its own.
+
+**api-gateway** gets a different, simpler treatment - it has no business endpoints of its own to
+annotate (it only routes to the four services above), so instead it hosts an **aggregated Swagger
+UI**: one dropdown, at the Gateway's own `http://localhost:8080/swagger-ui.html`, that lets you
+pick any of the four services and browse its full docs - without needing to know or reach each
+service's individual port. See "Aggregated Swagger UI on the Gateway" below.
 
 ## Swagger / OpenAPI
 
@@ -103,6 +109,36 @@ Every other endpoint is documented as requiring `bearerAuth`, consistent with th
 listener/producer classes - none of these are REST endpoints, so annotating them would just add
 noise without documenting anything Swagger UI can show.
 
+## Aggregated Swagger UI on the Gateway
+
+`api-gateway` also gets `springdoc-openapi-starter-webmvc-ui`, but for a different reason than the
+four business services: it has no endpoints of its own to document, so instead of per-endpoint
+annotations it hosts **one Swagger UI that aggregates all four services into a dropdown** - open
+`http://localhost:8080/swagger-ui.html`, pick a service from the dropdown at the top, and browse
+its docs without needing to know or reach that service's individual port (8081-8084).
+
+**How it works**:
+
+1. Four extra routes proxy each service's `/v3/api-docs` document through the Gateway, at
+   `/docs/<service-name>/v3/api-docs` (e.g. `/docs/authentication-service/v3/api-docs`), using
+   `RewritePath` filters to strip the `/docs/<service-name>` prefix before forwarding to
+   `lb://<service-name>/v3/api-docs`. These are documentation-only routes - separate from, and
+   with no effect on, the actual business routes (`/auth/**`, `/users/**`, etc.).
+2. `springdoc.swagger-ui.urls[0..3]` in `api-gateway`'s `application.properties` lists those four
+   proxied paths with display names - this is what populates the dropdown.
+3. `SecurityConfig` permits `/docs/**`, `/swagger-ui/**`, `/swagger-ui.html`, and `/v3/api-docs/**`
+   without a token - the last one matters because Swagger UI's own `configUrl` (which carries the
+   dropdown list) is served locally by the Gateway at `/v3/api-docs/swagger-config`, not under
+   `/docs/**`.
+4. The Gateway's own `OpenApiConfig` just gives its (otherwise near-empty, since it has no
+   `@RestController`s) local OpenAPI document a title, so it doesn't show up unlabeled if anyone
+   opens `/v3/api-docs` directly.
+
+This means there are now two ways to reach any service's Swagger UI: directly on its own port
+(`http://localhost:8081/swagger-ui.html` for authentication-service), or through the Gateway's
+aggregated dropdown at `http://localhost:8080/swagger-ui.html` - both show the same underlying
+OpenAPI document, since the Gateway is only proxying `/v3/api-docs`, not generating its own copy.
+
 ## Actuator / health checks
 
 Every business service already had `spring-boot-starter-actuator` on the classpath (used by the
@@ -116,7 +152,9 @@ management.endpoints.web.exposure.include=health
 management.endpoint.health.show-details=never
 ```
 
-This is the same block, verbatim, in all four services' `application.properties`.
+This is the same block, verbatim, in all four business services' `application.properties`, and was
+added to `api-gateway`'s as well while adding its Swagger UI (the Gateway already exposed
+`/actuator/health` before this change - only the explicit exposure/detail properties are new).
 
 - **`GET /actuator/health`** is public on every service (already permitted in each service's
   `SecurityConfig` before this change - not modified here) and returns `{"status":"UP"}` once the
