@@ -2,11 +2,16 @@ package com.example.NotificationService.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.example.NotificationService.client.UserProfileClient;
 import com.example.NotificationService.dto.CreateNotificationRequest;
+import com.example.NotificationService.dto.InternalProfileResponse;
 import com.example.NotificationService.dto.NotificationDto;
 import com.example.NotificationService.entity.Notification;
 import com.example.NotificationService.event.EmployeeFlaggedEvent;
@@ -16,10 +21,21 @@ import com.example.NotificationService.repository.NotificationRepository;
 @Service
 public class NotificationService {
 
-    private final NotificationRepository notificationRepository;
+    private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
 
-    public NotificationService(NotificationRepository notificationRepository) {
+    // Matches a bare UUID such as "650f54e6-f7df-4c9c-a3a2-350369d2d830". A fixed bug
+    // (JwtService.extractEmail returning the JWT subject/userId instead of the email
+    // claim) means some pre-fix notifications have this stored in hr_user_email instead
+    // of a real email address - never display it as if it were a name/email.
+    private static final Pattern UUID_PATTERN = Pattern.compile(
+            "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
+
+    private final NotificationRepository notificationRepository;
+    private final UserProfileClient userProfileClient;
+
+    public NotificationService(NotificationRepository notificationRepository, UserProfileClient userProfileClient) {
         this.notificationRepository = notificationRepository;
+        this.userProfileClient = userProfileClient;
     }
 
     public NotificationDto createNotification(CreateNotificationRequest request, String hrUserEmail) {
@@ -96,9 +112,7 @@ public class NotificationService {
     }
 
     private NotificationDto toDto(Notification notification) {
-        String senderName = StringUtils.hasText(notification.getHrUserName())
-                ? notification.getHrUserName()
-                : notification.getHrUserEmail();
+        String senderName = resolveSenderName(notification);
 
         return new NotificationDto(
                 notification.getId(),
@@ -110,5 +124,41 @@ public class NotificationService {
                 notification.getHrUserEmail(),
                 senderName,
                 notification.isRead());
+    }
+
+    // hrUserName is the preferred display name. If it's missing, fall back to the
+    // email - unless that email is actually a bare UUID (a pre-fix legacy row, see
+    // UUID_PATTERN above), in which case it's really a userId: resolve it against
+    // User Profile Service (the same store Authentication/frontend already treat as
+    // the source of truth for a user's display name) rather than showing the UUID
+    // or a fabricated name. Only falls back to a generic label if that lookup
+    // genuinely can't resolve a name (profile deleted, service unavailable, etc).
+    private String resolveSenderName(Notification notification) {
+        if (StringUtils.hasText(notification.getHrUserName())) {
+            return notification.getHrUserName();
+        }
+        String email = notification.getHrUserEmail();
+        if (!StringUtils.hasText(email)) {
+            return "Unknown HR user";
+        }
+        if (!UUID_PATTERN.matcher(email).matches()) {
+            return email;
+        }
+        return resolveNameByUserId(email);
+    }
+
+    private String resolveNameByUserId(String userId) {
+        try {
+            InternalProfileResponse profile = userProfileClient.getProfile(userId);
+            if (profile != null && StringUtils.hasText(profile.fullName())) {
+                return profile.fullName();
+            }
+        } catch (RuntimeException ex) {
+            // Profile not found (404), User Profile Service unavailable, or unresolvable
+            // via service discovery - none of these should break notification listing,
+            // so fall through to the generic label below.
+            log.warn("Could not resolve HR display name for legacy userId {}: {}", userId, ex.getMessage());
+        }
+        return "Unknown HR user";
     }
 }

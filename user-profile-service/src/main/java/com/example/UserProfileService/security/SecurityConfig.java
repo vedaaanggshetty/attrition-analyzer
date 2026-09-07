@@ -22,6 +22,13 @@ public class SecurityConfig {
     // any credential/JWT exists). Every other endpoint (e.g. /users/me)
     // requires a valid JWT issued by Authentication Service, validated by
     // JwtAuthenticationFilter using the same shared signing secret.
+    //
+    // TEMPORARY INTERNAL-ACCESS ASSUMPTION: /internal/** (currently just
+    // GET /internal/profiles/{userId}) is permitted without a JWT because it
+    // is meant for service-to-service calls (e.g. Notification Service via
+    // Feign), not the public frontend - same assumption already accepted for
+    // authentication-service's /internal/credentials. Not reachable through
+    // the Gateway (which only routes /users/**, not /internal/**).
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -29,6 +36,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/users/register").permitAll()
+                        .requestMatchers("/internal/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated()

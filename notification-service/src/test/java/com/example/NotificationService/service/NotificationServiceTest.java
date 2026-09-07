@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -19,7 +20,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.example.NotificationService.client.UserProfileClient;
 import com.example.NotificationService.dto.CreateNotificationRequest;
+import com.example.NotificationService.dto.InternalProfileResponse;
 import com.example.NotificationService.dto.NotificationDto;
 import com.example.NotificationService.entity.Notification;
 import com.example.NotificationService.event.EmployeeFlaggedEvent;
@@ -32,11 +35,14 @@ class NotificationServiceTest {
     @Mock
     private NotificationRepository notificationRepository;
 
+    @Mock
+    private UserProfileClient userProfileClient;
+
     private NotificationService notificationService;
 
     @BeforeEach
     void setUp() {
-        notificationService = new NotificationService(notificationRepository);
+        notificationService = new NotificationService(notificationRepository, userProfileClient);
     }
 
     private static Notification sampleNotification(String owner) {
@@ -119,6 +125,43 @@ class NotificationServiceTest {
         List<NotificationDto> result = notificationService.getAllNotifications();
 
         assertThat(result.get(0).senderName()).isEqualTo("someone-else@example.com");
+    }
+
+    @Test
+    void shouldResolveLegacyUserIdToRealHrNameViaUserProfileService() {
+        // Pre-fix rows: JwtService.extractEmail() used to return the JWT subject
+        // (a UUID) instead of the email claim, so hr_user_email on some legacy
+        // notifications holds a bare userId rather than a real email address.
+        // User Profile Service (same store Authentication/the frontend already
+        // treat as the source of truth for a user's name) is the correct place
+        // to resolve that userId back to a real display name.
+        String legacyUserId = "650f54e6-f7df-4c9c-a3a2-350369d2d830";
+        Notification notification = new Notification(
+                "5a94", "Leonelle Simco", "Sales", legacyUserId, null, "Flight risk, discuss retention");
+        given(notificationRepository.findAllByOrderByCreatedAtDesc()).willReturn(List.of(notification));
+        given(userProfileClient.getProfile(legacyUserId))
+                .willReturn(new InternalProfileResponse(UUID.fromString(legacyUserId), "Bhoomi Bangera"));
+
+        List<NotificationDto> result = notificationService.getAllNotifications();
+
+        assertThat(result.get(0).senderName()).isEqualTo("Bhoomi Bangera");
+    }
+
+    @Test
+    void shouldFallBackToGenericSenderWhenLegacyUserIdCannotBeResolved() {
+        // Same legacy shape as above, but the profile lookup itself fails (e.g.
+        // the profile no longer exists, or User Profile Service is unreachable) -
+        // there is genuinely no name to show, so the generic label is correct,
+        // not a fabricated name and not the raw UUID.
+        String legacyUserId = "650f54e6-f7df-4c9c-a3a2-350369d2d830";
+        Notification notification = new Notification(
+                "5a94", "Leonelle Simco", "Sales", legacyUserId, null, "Flight risk, discuss retention");
+        given(notificationRepository.findAllByOrderByCreatedAtDesc()).willReturn(List.of(notification));
+        willThrow(new RuntimeException("404 profile not found")).given(userProfileClient).getProfile(legacyUserId);
+
+        List<NotificationDto> result = notificationService.getAllNotifications();
+
+        assertThat(result.get(0).senderName()).isEqualTo("Unknown HR user");
     }
 
     @Test

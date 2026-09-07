@@ -37,6 +37,14 @@ function severity(rate: number): "neutral" | "amber" | "red" {
   return "neutral";
 }
 
+// The backend returns each analysis grouped alphabetically (TreeMap), not
+// sorted by attritionRate - so "the first row" is never the same thing as
+// "the highest-attrition row". This picks the actual max by attritionRate.
+function topByAttritionRate(rows: AttritionAnalysis[]): AttritionAnalysis | undefined {
+  if (rows.length === 0) return undefined;
+  return rows.reduce((top, row) => (row.attritionRate > top.attritionRate ? row : top));
+}
+
 const SEVERITY_BAR: Record<ReturnType<typeof severity>, string> = {
   neutral: "bg-brand-500",
   amber: "bg-amber-500",
@@ -133,12 +141,12 @@ export function Dashboard() {
   const topGroups = useMemo(() => {
     if (!analysis) return null;
     return [
-      { label: "Department", anchor: "department", queryKey: "department", row: analysis.department[0] },
-      { label: "Job Role", anchor: "job-role", queryKey: "jobRole", row: analysis.jobRole[0] },
-      { label: "Compensation", anchor: "compensation", queryKey: "compensationBand", row: analysis.compensation[0] },
-      { label: "Demographics", anchor: "demographics", queryKey: "gender", row: analysis.demographics[0] },
-      { label: "Work-Life Balance", anchor: "work-life-balance", queryKey: "overTime", row: analysis.workLifeBalance[0] },
-      { label: "Career Progression", anchor: "career-progression", queryKey: "promotionBand", row: analysis.careerProgression[0] },
+      { label: "Department", anchor: "department", queryKey: "department", row: topByAttritionRate(analysis.department) },
+      { label: "Job Role", anchor: "job-role", queryKey: "jobRole", row: topByAttritionRate(analysis.jobRole) },
+      { label: "Compensation", anchor: "compensation", queryKey: "compensationBand", row: topByAttritionRate(analysis.compensation) },
+      { label: "Demographics", anchor: "demographics", queryKey: "gender", row: topByAttritionRate(analysis.demographics) },
+      { label: "Work-Life Balance", anchor: "work-life-balance", queryKey: "overTime", row: topByAttritionRate(analysis.workLifeBalance) },
+      { label: "Career Progression", anchor: "career-progression", queryKey: "promotionBand", row: topByAttritionRate(analysis.careerProgression) },
     ].filter(
       (g): g is { label: string; anchor: string; queryKey: string; row: AttritionAnalysis } => g.row !== undefined
     );

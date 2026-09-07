@@ -50,7 +50,6 @@ export function EmployeeCard({ employee, featured = false }: { employee: Employe
               >
                 {employee.department}
               </span>
-              <span className="truncate text-sm font-mono text-neutral-400 border border-brand-900/10 rounded-md px-2 py-0.5">{employee.employeeId}</span>
             </div>
           </div>
 
