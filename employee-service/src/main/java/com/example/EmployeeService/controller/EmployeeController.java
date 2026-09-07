@@ -58,7 +58,10 @@ public class EmployeeController {
 	@Operation(
 			summary = "List employees, or search by a single field",
 			description = "With no query parameters, returns every employee. With both 'property' and 'value' "
-					+ "given, returns only employees whose field matches (single-field search)."
+					+ "given, returns only employees whose field matches (single-field search). Not "
+					+ "Guest-visible - only the six /employees/analysis/** endpoints are public; this one "
+					+ "requires a Bearer JWT at the Gateway.",
+			security = @SecurityRequirement(name = "bearerAuth")
 	)
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Employees found",
@@ -67,6 +70,7 @@ public class EmployeeController {
 			@ApiResponse(responseCode = "400", description = "Only one of 'property'/'value' was given",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 							schema = @Schema(implementation = ErrorResponse.class))),
+			@ApiResponse(responseCode = "401", description = "Missing or invalid Bearer token", content = @Content),
 			@ApiResponse(responseCode = "503", description = "The external Survey API is unavailable", content = @Content)
 	})
 	@GetMapping("/employees")
@@ -89,11 +93,12 @@ public class EmployeeController {
 				.body(new ErrorResponse("Both 'property' and 'value' query parameters are required for search"));
 	}
 
-	@Operation(summary = "Get one employee by id")
+	@Operation(summary = "Get one employee by id", security = @SecurityRequirement(name = "bearerAuth"))
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Employee found",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 							schema = @Schema(implementation = EmployeeDto.class))),
+			@ApiResponse(responseCode = "401", description = "Missing or invalid Bearer token", content = @Content),
 			@ApiResponse(responseCode = "404", description = "No employee with this id",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 							schema = @Schema(implementation = ErrorResponse.class)))

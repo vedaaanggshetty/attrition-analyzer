@@ -205,6 +205,20 @@ else needs):
 Verified this exact sequence end-to-end against the live stack (register -> login -> call
 `/users/me`, `/employees`, and `/notifications` with the returned token) - all succeeded.
 
+**A second real bug this caught (the opposite direction of the one above)**: `GET /employees` and
+`GET /employees/{id}` had **no `@SecurityRequirement` at all** - not because they're public, but
+because they were simply never annotated with one. Swagger UI only attaches the Bearer token to an
+operation that actually *declares* a security requirement in its spec; with none declared, "Try it
+out" sent these two requests with no `Authorization` header even after clicking **Authorize**,
+producing a `401` that looked like a broken integration. Verified directly (`curl` with no header
+returned `401` for both, matching the Gateway's real `anyRequest().authenticated()` default - only
+`/employees/analysis/**` is actually permitted without a token), then fixed by adding
+`security = @SecurityRequirement(name = "bearerAuth")` to both operations in `EmployeeController`.
+Confirmed after the fix: both endpoints correctly document `security` and `401` as a possible
+response, and the full Register -> Login -> Authorize -> `GET /employees` -> `GET /employees/{id}`
+-> `GET /employees/analysis/**` -> `POST /employees/{id}/flag` sequence succeeds end-to-end through
+the Gateway's Swagger UI.
+
 ## Actuator / health checks
 
 Every business service already had `spring-boot-starter-actuator` on the classpath (used by the
