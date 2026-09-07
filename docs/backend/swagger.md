@@ -13,10 +13,11 @@ below) applies to the four business services - **authentication-service**,
 (Eureka's own dashboard, not a REST API to document) has no Swagger of its own.
 
 **api-gateway** gets a different, simpler treatment - it has no business endpoints of its own to
-annotate (it only routes to the four services above), so instead it hosts an **aggregated Swagger
-UI**: one dropdown, at the Gateway's own `http://localhost:8080/swagger-ui.html`, that lets you
-pick any of the four services and browse its full docs - without needing to know or reach each
-service's individual port. See "Aggregated Swagger UI on the Gateway" below.
+annotate (it only routes to the four services above), so instead of documenting itself it hosts
+**one unified Swagger UI, at `http://localhost:8080/swagger-ui.html`, that merges all four
+services' endpoints into a single page** - grouped by tag (Authentication, User Profile, Employee,
+Notifications), with real schemas, parameters, and status codes for every endpoint, and no
+dropdown or separate pages to open. See "Unified Swagger UI on the Gateway" below.
 
 ## Swagger / OpenAPI
 
@@ -109,35 +110,100 @@ Every other endpoint is documented as requiring `bearerAuth`, consistent with th
 listener/producer classes - none of these are REST endpoints, so annotating them would just add
 noise without documenting anything Swagger UI can show.
 
-## Aggregated Swagger UI on the Gateway
+## Unified Swagger UI on the Gateway
 
 `api-gateway` also gets `springdoc-openapi-starter-webmvc-ui`, but for a different reason than the
-four business services: it has no endpoints of its own to document, so instead of per-endpoint
-annotations it hosts **one Swagger UI that aggregates all four services into a dropdown** - open
-`http://localhost:8080/swagger-ui.html`, pick a service from the dropdown at the top, and browse
-its docs without needing to know or reach that service's individual port (8081-8084).
+four business services: it has no endpoints of its own to document. Instead of a dropdown that
+sends you to four separate pages, `AggregatedOpenApiCustomizer`
+(`api-gateway/src/main/java/com/example/APIGateway/config/AggregatedOpenApiCustomizer.java`)
+**merges** all four services' OpenAPI documents into the Gateway's own, so
+`http://localhost:8080/swagger-ui.html` is genuinely one page with every endpoint on it.
 
-**How it works**:
+**How the merge works**, on every request to the Gateway's `/v3/api-docs` (caching is disabled for
+this doc specifically - see below - so it's always current):
 
-1. Four extra routes proxy each service's `/v3/api-docs` document through the Gateway, at
-   `/docs/<service-name>/v3/api-docs` (e.g. `/docs/authentication-service/v3/api-docs`), using
-   `RewritePath` filters to strip the `/docs/<service-name>` prefix before forwarding to
-   `lb://<service-name>/v3/api-docs`. These are documentation-only routes - separate from, and
-   with no effect on, the actual business routes (`/auth/**`, `/users/**`, etc.).
-2. `springdoc.swagger-ui.urls[0..3]` in `api-gateway`'s `application.properties` lists those four
-   proxied paths with display names - this is what populates the dropdown.
-3. `SecurityConfig` permits `/docs/**`, `/swagger-ui/**`, `/swagger-ui.html`, and `/v3/api-docs/**`
-   without a token - the last one matters because Swagger UI's own `configUrl` (which carries the
-   dropdown list) is served locally by the Gateway at `/v3/api-docs/swagger-config`, not under
-   `/docs/**`.
-4. The Gateway's own `OpenApiConfig` just gives its (otherwise near-empty, since it has no
-   `@RestController`s) local OpenAPI document a title, so it doesn't show up unlabeled if anyone
-   opens `/v3/api-docs` directly.
+1. A load-balanced `RestTemplate` (`RestTemplateConfig`) fetches each service's own
+   `http://<service-name>/v3/api-docs` via Eureka - the same discovery mechanism the Gateway's
+   `lb://` routes already use, not a new one.
+2. Each service's schema names are prefixed (`ErrorResponse` -> `AuthErrorResponse`,
+   `ProfileErrorResponse`, `EmployeeErrorResponse`, `NotificationErrorResponse`, etc.) and every
+   `$ref` pointing at them is rewritten to match. This is necessary, not cosmetic: every service
+   independently defines its own `ErrorResponse`, `LoginRequest`-shaped DTOs, and so on - merged
+   without renaming, the last one processed would silently overwrite the others' schema
+   definitions in the combined document.
+3. Each service's tags are renamed to the one group name it should appear under - e.g.
+   user-profile-service's separate `Registration` and `Profile` tags both become **User Profile**,
+   so the sidebar shows exactly the four groups requested: **Authentication, User Profile,
+   Employee, Notifications**.
+4. Paths, schemas, tags, and the shared `bearerAuth` security scheme are copied into the Gateway's
+   document - **except `/internal/**`**, which is deliberately excluded (see the `Internal
+   Credentials` note above): the Gateway has no route for it and never proxies it, so documenting
+   it here would show an endpoint that isn't actually reachable through this page's own
+   `servers: ["/"]`. Any tag left with no remaining path after that exclusion is dropped too, so it
+   never appears as an empty group.
+5. If a service is unreachable when the doc is being built, that one is skipped (logged as a
+   warning) rather than failing the whole page - a service that's still starting up just means its
+   endpoints are missing until the next request rebuilds the doc, not a broken Swagger page.
 
-This means there are now two ways to reach any service's Swagger UI: directly on its own port
-(`http://localhost:8081/swagger-ui.html` for authentication-service), or through the Gateway's
-aggregated dropdown at `http://localhost:8080/swagger-ui.html` - both show the same underlying
-OpenAPI document, since the Gateway is only proxying `/v3/api-docs`, not generating its own copy.
+**Paths and schemas are the real thing, not re-typed**: because each service's own controllers and
+DTOs are still the single source of truth (per-endpoint `@Tag`/`@Operation`/`@Schema`/etc.
+annotated directly on them, as described above), the merge only copies already-generated JSON -
+there's no separate, hand-maintained "gateway view" of the API that could drift from the actual
+code.
+
+`springdoc.cache.disabled=true` in `api-gateway`'s `application.properties` means this fetch-and-merge
+happens on every load of the docs page (a handful of small internal HTTP calls, not real API
+traffic) rather than once and cached - trading a little bit of latency on that one page for the
+guarantee that it's never stale from a service that was down the first time someone opened it.
+
+Each service's own Swagger UI (`http://localhost:<port>/swagger-ui.html`, ports 8081-8084) still
+works exactly as before and is unaffected by this - useful for testing a service in isolation, or
+for `/internal/credentials`, which (correctly) only shows up there, never on the Gateway's page.
+
+### Server address and "Try it out"
+
+The merged doc's `servers` is a single, explicit `http://localhost:8080` (not a relative `/`) -
+set in `api-gateway`'s `OpenApiConfig`. "Try it out" always calls the Gateway directly, the same
+address the frontend uses; it never calls an individual service's own port (8081-8084), even
+though the underlying spec for each endpoint originally came from there.
+
+### Access-level labels (Public / Guest-accessible / Requires Bearer JWT)
+
+Every operation's description is prefixed with one of three labels, computed automatically in
+`AggregatedOpenApiCustomizer.markAccessLevels` from the operation's actual (post-merge) `security`
+requirement - never hand-typed, so the label can't drift from what's actually enforced:
+
+- **Public - no token required.** - e.g. `POST /users/register`, `POST /auth/login`.
+- **Guest-accessible - no token required.** - the six `GET /employees/analysis/**` endpoints,
+  called out separately from plain "Public" since they're specifically what a logged-out Guest can
+  see on the landing page (same enforcement as Public, distinguished only because the frontend
+  treats them as a distinct surface).
+- **Requires Bearer JWT (HR-only).** - everything else.
+
+**A real bug this caught**: four of the six attrition-analysis endpoints
+(`/employees/analysis/compensation`, `demographics`, `work-life-balance`, `career-progression`)
+had been annotated with `@SecurityRequirement(name = "bearerAuth")` at the operation level, making
+Swagger UI show them as requiring a token - but the Gateway's actual rule,
+`.requestMatchers(HttpMethod.GET, "/employees/analysis/**").permitAll()`, permits all six without
+one. Verified directly (`curl` with no `Authorization` header returned `200` for all four before
+touching the docs), then fixed by removing the incorrect annotation from
+`EmployeeController` - now all six are documented identically as Guest-accessible, matching what
+the Gateway actually does.
+
+### The documented flow
+
+The Gateway doc's top-level description spells out the only order that makes sense given the
+architecture (a Guest becomes an HR user by registering, logging in produces the JWT everything
+else needs):
+
+1. `POST /users/register` - create an HR account (Public)
+2. `POST /auth/login` - log in, copy the `token` field from the response (Public)
+3. Click **Authorize** (top right of Swagger UI) and paste the token
+4. Call any protected endpoint - `GET /users/me`, `GET /employees`, `GET /employees/{id}`,
+   `POST /employees/{id}/flag`, or any `/notifications/**` endpoint
+
+Verified this exact sequence end-to-end against the live stack (register -> login -> call
+`/users/me`, `/employees`, and `/notifications` with the returned token) - all succeeded.
 
 ## Actuator / health checks
 
@@ -179,6 +245,12 @@ added to `api-gateway`'s as well while adding its Swagger UI (the Gateway alread
   following the redirect).
 - Confirmed the Gateway, Eureka, and the frontend were unaffected (`/actuator/health` on the
   Gateway, Eureka's dashboard, and the frontend's root page all still return 200).
+- Verified the Gateway's merged `/v3/api-docs` directly: exactly the four requested tags appear
+  (`Internal Credentials` correctly excluded, along with its one path), all sixteen frontend-facing
+  paths from all four services are present, and each service's `ErrorResponse` (and other
+  same-named DTOs) landed under distinct prefixed schema names with `$ref`s pointing at the correct
+  one - confirmed by inspecting `/auth/login`'s request body schema resolving to
+  `AuthLoginRequest`, not a same-named schema from a different service.
 
 ## Tests
 

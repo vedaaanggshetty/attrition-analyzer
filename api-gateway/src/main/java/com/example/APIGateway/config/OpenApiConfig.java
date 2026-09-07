@@ -2,14 +2,15 @@ package com.example.APIGateway.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-// The Gateway has no business endpoints of its own, so this is the actual
-// landing page contributors see at /swagger-ui.html (set as the default via
-// springdoc.swagger-ui.urls-primary-name) - a real overview with working
-// links to each service, not an empty title. Swagger UI renders this
-// description as Markdown.
+import java.util.List;
+
+// The base document the Gateway builds before AggregatedOpenApiCustomizer
+// merges in every business service's own paths/schemas/tags - see that
+// class for how the endpoints below actually get here.
 @Configuration
 public class OpenApiConfig {
 
@@ -17,22 +18,31 @@ public class OpenApiConfig {
     public OpenAPI apiGatewayOpenApi() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("API Gateway")
+                        .title("Attrition Analyzer API")
                         .description("""
-                                Single entry point for the frontend - routes every request below to the right \
-                                business service. This Gateway has no business endpoints of its own.
+                                Every endpoint the frontend calls, through the single entry point it actually \
+                                uses - the API Gateway. Grouped below by tag: **Authentication**, **User \
+                                Profile**, **Employee**, **Notifications**.
 
-                                Use the **dropdown above** (top-left) to switch between services' full API docs \
-                                without leaving this page, or open a service directly on its own port:
+                                Each endpoint's description states whether it's **Public** (no token needed), \
+                                **Guest-accessible** (the six attrition-analysis endpoints - public, same as \
+                                Public, called out separately since they're what a logged-out Guest can see \
+                                on the landing page), or requires a **Bearer JWT** (HR-only).
 
-                                - [Authentication Service](http://localhost:8081/swagger-ui.html) - login, JWT issuance (port 8081)
-                                - [User Profile Service](http://localhost:8082/swagger-ui.html) - registration, profile view/update (port 8082)
-                                - [Employee Service](http://localhost:8083/swagger-ui.html) - employee data, attrition analysis, flagging (port 8083)
-                                - [Notification Service](http://localhost:8084/swagger-ui.html) - shared HR notifications (port 8084)
-
-                                All business routes are also reachable through this Gateway at \
-                                `http://localhost:8080` (e.g. `POST /auth/login`), the same address the frontend uses.
+                                **To try protected endpoints, in this order:**
+                                1. `POST /users/register` - create an HR account (Public)
+                                2. `POST /auth/login` - log in with that email/password (Public) - copy the \
+                                `token` field from the response
+                                3. Click **Authorize** (top right) and paste the token as \
+                                `Bearer <token>` (or just the raw token - Swagger adds the prefix)
+                                4. Now call any protected endpoint - e.g. `GET /users/me`, `GET /employees`, \
+                                `GET /employees/{id}`, `POST /employees/{id}/flag`, or any `/notifications/**` \
+                                endpoint.
                                 """)
-                        .version("v1"));
+                        .version("v1"))
+                // "Try it out" must call the Gateway itself - explicit and absolute, not a
+                // relative "/", so it always hits port 8080 regardless of how this page
+                // is being reached (this is the one address the frontend also uses).
+                .servers(List.of(new Server().url("http://localhost:8080")));
     }
 }

@@ -52,6 +52,13 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
 		</dependency>
+		<!-- Powers the load-balanced RestTemplate used to fetch each business
+		     service's own OpenAPI document (via Eureka), so they can be merged
+		     into one unified doc - see AggregatedOpenApiCustomizer. -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-loadbalancer</artifactId>
+		</dependency>
 
 		<!-- Required to validate JWTs issued by Authentication Service -->
 		<dependency>

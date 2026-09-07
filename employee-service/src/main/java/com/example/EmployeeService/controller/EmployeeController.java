@@ -168,7 +168,8 @@ public class EmployeeController {
 	}
 
 	@Operation(summary = "Attrition rate by compensation band",
-			security = @SecurityRequirement(name = "bearerAuth"))
+			description = "Guest-visible - the Gateway permits this endpoint without a token (matches "
+					+ "GET /employees/analysis/** in the Gateway's SecurityConfig).")
 	@ApiResponse(responseCode = "200", description = "One row per compensation band",
 			content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 					array = @ArraySchema(schema = @Schema(implementation = AttritionAnalysisDto.class))))
@@ -178,7 +179,8 @@ public class EmployeeController {
 	}
 
 	@Operation(summary = "Attrition rate by gender",
-			security = @SecurityRequirement(name = "bearerAuth"))
+			description = "Guest-visible - the Gateway permits this endpoint without a token (matches "
+					+ "GET /employees/analysis/** in the Gateway's SecurityConfig).")
 	@ApiResponse(responseCode = "200", description = "One row per demographic group",
 			content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 					array = @ArraySchema(schema = @Schema(implementation = AttritionAnalysisDto.class))))
@@ -188,7 +190,8 @@ public class EmployeeController {
 	}
 
 	@Operation(summary = "Attrition rate by overtime status",
-			security = @SecurityRequirement(name = "bearerAuth"))
+			description = "Guest-visible - the Gateway permits this endpoint without a token (matches "
+					+ "GET /employees/analysis/** in the Gateway's SecurityConfig).")
 	@ApiResponse(responseCode = "200", description = "One row per overtime status",
 			content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 					array = @ArraySchema(schema = @Schema(implementation = AttritionAnalysisDto.class))))
@@ -198,7 +201,8 @@ public class EmployeeController {
 	}
 
 	@Operation(summary = "Attrition rate by promotion recency",
-			security = @SecurityRequirement(name = "bearerAuth"))
+			description = "Guest-visible - the Gateway permits this endpoint without a token (matches "
+					+ "GET /employees/analysis/** in the Gateway's SecurityConfig).")
 	@ApiResponse(responseCode = "200", description = "One row per promotion band",
 			content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 					array = @ArraySchema(schema = @Schema(implementation = AttritionAnalysisDto.class))))
