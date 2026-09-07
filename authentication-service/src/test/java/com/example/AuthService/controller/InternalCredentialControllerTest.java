@@ -38,7 +38,7 @@ class InternalCredentialControllerTest {
     private AuthService authService;
 
     @Test
-    void registerCredential_withValidRequest_returns201AndUserId() throws Exception {
+    void shouldRegisterCredentialSuccessfully() throws Exception {
         RegisterCredentialRequest request = new RegisterCredentialRequest("hr@example.com", "Password123!");
         UUID userId = UUID.randomUUID();
 
@@ -53,7 +53,7 @@ class InternalCredentialControllerTest {
     }
 
     @Test
-    void registerCredential_withDuplicateEmail_returns409() throws Exception {
+    void shouldRejectDuplicateEmail() throws Exception {
         RegisterCredentialRequest request = new RegisterCredentialRequest("hr@example.com", "Password123!");
 
         when(authService.registerCredential(any(RegisterCredentialRequest.class)))
@@ -67,7 +67,7 @@ class InternalCredentialControllerTest {
     }
 
     @Test
-    void registerCredential_withBlankEmail_returns400() throws Exception {
+    void shouldRejectBlankEmail() throws Exception {
         RegisterCredentialRequest request = new RegisterCredentialRequest("", "Password123!");
 
         mockMvc.perform(post("/internal/credentials")

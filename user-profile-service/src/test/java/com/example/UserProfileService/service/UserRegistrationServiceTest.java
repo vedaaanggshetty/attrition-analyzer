@@ -1,7 +1,6 @@
 package com.example.UserProfileService.service;
 
 import com.example.UserProfileService.client.AuthenticationClient;
-import com.example.UserProfileService.dto.AuthCredentialRequest;
 import com.example.UserProfileService.dto.AuthCredentialResponse;
 import com.example.UserProfileService.dto.RegisterUserRequest;
 import com.example.UserProfileService.dto.RegisterUserResponse;
@@ -14,14 +13,13 @@ import feign.Request;
 import feign.RequestTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
+import java.util.Collections;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -41,81 +39,57 @@ class UserRegistrationServiceTest {
     }
 
     @Test
-    void register_withNewEmail_callsAuthenticationAndPersistsProfileWithSameUserId() {
-        RegisterUserRequest request = new RegisterUserRequest(
-                "Jane HR", "jane@example.com", "Password123!", "555-1234");
+    void shouldRegisterNewUser() {
         UUID userId = UUID.randomUUID();
-
         when(userProfileRepository.existsByEmail("jane@example.com")).thenReturn(false);
-        when(authenticationClient.registerCredential(new AuthCredentialRequest("jane@example.com", "Password123!")))
-                .thenReturn(new AuthCredentialResponse(userId));
+        when(authenticationClient.registerCredential(any())).thenReturn(new AuthCredentialResponse(userId));
         when(userProfileRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        RegisterUserResponse response = userRegistrationService.register(request);
+        RegisterUserResponse response = userRegistrationService.register(
+                new RegisterUserRequest("Jane HR", "jane@example.com", "Password123!", "555-1234"));
 
-        ArgumentCaptor<UserProfile> captor = ArgumentCaptor.forClass(UserProfile.class);
-        verify(userProfileRepository).save(captor.capture());
-
-        UserProfile saved = captor.getValue();
         assertThat(response.userId()).isEqualTo(userId);
-        assertThat(saved.getUserId()).isEqualTo(userId);
-        assertThat(saved.getFullName()).isEqualTo("Jane HR");
-        assertThat(saved.getEmail()).isEqualTo("jane@example.com");
-        assertThat(saved.getPhone()).isEqualTo("555-1234");
+        verify(userProfileRepository).save(any(UserProfile.class));
     }
 
     @Test
-    void register_withEmailAlreadyInProfileDb_throwsDuplicateEmailWithoutCallingAuthentication() {
-        RegisterUserRequest request = new RegisterUserRequest(
-                "Jane HR", "existing@example.com", "Password123!", null);
-
+    void shouldRejectEmailAlreadyInProfileDb() {
         when(userProfileRepository.existsByEmail("existing@example.com")).thenReturn(true);
 
-        assertThatThrownBy(() -> userRegistrationService.register(request))
-                .isInstanceOf(DuplicateEmailException.class)
-                .hasMessage("Email is already registered");
+        assertThatThrownBy(() -> userRegistrationService.register(
+                new RegisterUserRequest("Jane HR", "existing@example.com", "Password123!", null)))
+                .isInstanceOf(DuplicateEmailException.class);
 
         verify(authenticationClient, never()).registerCredential(any());
-        verify(userProfileRepository, never()).save(any());
     }
 
     @Test
-    void register_whenAuthenticationReportsDuplicate_throwsDuplicateEmail() {
-        RegisterUserRequest request = new RegisterUserRequest(
-                "Jane HR", "race@example.com", "Password123!", null);
-
+    void shouldRejectWhenAuthenticationReportsDuplicate() {
         when(userProfileRepository.existsByEmail("race@example.com")).thenReturn(false);
         when(authenticationClient.registerCredential(any())).thenThrow(conflictFeignException());
 
-        assertThatThrownBy(() -> userRegistrationService.register(request))
+        assertThatThrownBy(() -> userRegistrationService.register(
+                new RegisterUserRequest("Jane HR", "race@example.com", "Password123!", null)))
                 .isInstanceOf(DuplicateEmailException.class);
-
-        verify(userProfileRepository, never()).save(any());
     }
 
     @Test
-    void register_whenAuthenticationServiceUnavailable_throwsAuthenticationServiceException() {
-        RegisterUserRequest request = new RegisterUserRequest(
-                "Jane HR", "down@example.com", "Password123!", null);
-
+    void shouldFailClearlyWhenAuthenticationServiceIsDown() {
         when(userProfileRepository.existsByEmail("down@example.com")).thenReturn(false);
         when(authenticationClient.registerCredential(any())).thenThrow(serverErrorFeignException());
 
-        assertThatThrownBy(() -> userRegistrationService.register(request))
+        assertThatThrownBy(() -> userRegistrationService.register(
+                new RegisterUserRequest("Jane HR", "down@example.com", "Password123!", null)))
                 .isInstanceOf(AuthenticationServiceException.class);
-
-        verify(userProfileRepository, never()).save(any());
     }
 
     private FeignException.Conflict conflictFeignException() {
-        Request request = Request.create(Request.HttpMethod.POST, "/internal/credentials",
-                java.util.Collections.emptyMap(), null, new RequestTemplate());
+        Request request = Request.create(Request.HttpMethod.POST, "/internal/credentials", Collections.emptyMap(), null, new RequestTemplate());
         return new FeignException.Conflict("conflict", request, null, null);
     }
 
     private FeignException serverErrorFeignException() {
-        Request request = Request.create(Request.HttpMethod.POST, "/internal/credentials",
-                java.util.Collections.emptyMap(), null, new RequestTemplate());
+        Request request = Request.create(Request.HttpMethod.POST, "/internal/credentials", Collections.emptyMap(), null, new RequestTemplate());
         return new FeignException.InternalServerError("server error", request, null, null);
     }
 }

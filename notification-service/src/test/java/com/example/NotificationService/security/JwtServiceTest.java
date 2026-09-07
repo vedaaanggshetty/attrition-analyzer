@@ -19,7 +19,7 @@ class JwtServiceTest {
     private final JwtService jwtService = new JwtService(SECRET);
 
     @Test
-    void extractEmailReturnsEmailClaimFromValidToken() {
+    void shouldExtractEmailFromValidToken() {
         String token = Jwts.builder()
                 .subject("11111111-1111-1111-1111-111111111111")
                 .claim("email", "hr@example.com")
@@ -31,13 +31,13 @@ class JwtServiceTest {
     }
 
     @Test
-    void extractEmailThrowsForMalformedToken() {
+    void shouldRejectMalformedToken() {
         assertThatThrownBy(() -> jwtService.extractEmail("not-a-real-token"))
                 .isInstanceOf(UnauthenticatedException.class);
     }
 
     @Test
-    void extractEmailThrowsForTokenSignedWithDifferentKey() {
+    void shouldRejectTokenSignedWithWrongSecret() {
         String token = Jwts.builder()
                 .subject("hr@example.com")
                 .signWith(Keys.hmacShaKeyFor("a-completely-different-secret-value-1234567890-abcdef".getBytes(StandardCharsets.UTF_8)))

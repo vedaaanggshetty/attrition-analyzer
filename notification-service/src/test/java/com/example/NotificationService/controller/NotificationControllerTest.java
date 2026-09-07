@@ -48,7 +48,7 @@ class NotificationControllerTest {
     }
 
     @Test
-    void createNotificationReturns201WithCreatedNotification() throws Exception {
+    void shouldCreateNotificationSuccessfully() throws Exception {
         given(jwtService.extractEmail("valid-token")).willReturn("hr@example.com");
         CreateNotificationRequest request = new CreateNotificationRequest(
                 "5a94", "Leonelle Simco", "Sales", "Flight risk, discuss retention", "HR User");
@@ -64,7 +64,7 @@ class NotificationControllerTest {
     }
 
     @Test
-    void createNotificationWithoutTokenReturns401() throws Exception {
+    void shouldRejectCreateWithoutToken() throws Exception {
         CreateNotificationRequest request = new CreateNotificationRequest(
                 "5a94", "Leonelle Simco", "Sales", "Flight risk, discuss retention", "HR User");
 
@@ -75,7 +75,7 @@ class NotificationControllerTest {
     }
 
     @Test
-    void createNotificationWithBlankCommentReturns400() throws Exception {
+    void shouldRejectBlankComment() throws Exception {
         given(jwtService.extractEmail("valid-token")).willReturn("hr@example.com");
         CreateNotificationRequest request = new CreateNotificationRequest("5a94", "Leonelle Simco", "Sales", " ", "HR User");
 
@@ -87,7 +87,7 @@ class NotificationControllerTest {
     }
 
     @Test
-    void getAllNotificationsReturnsSharedList() throws Exception {
+    void shouldReturnSharedNotificationList() throws Exception {
         given(jwtService.extractEmail("valid-token")).willReturn("hr@example.com");
         given(notificationService.getAllNotifications()).willReturn(List.of(sampleNotification()));
 
@@ -99,7 +99,7 @@ class NotificationControllerTest {
     }
 
     @Test
-    void getAllNotificationsReturnsEmptyListWhenNoneExist() throws Exception {
+    void shouldReturnEmptyListWhenNoneExist() throws Exception {
         given(jwtService.extractEmail("valid-token")).willReturn("hr@example.com");
         given(notificationService.getAllNotifications()).willReturn(List.of());
 
@@ -109,13 +109,13 @@ class NotificationControllerTest {
     }
 
     @Test
-    void getAllNotificationsWithoutTokenReturns401() throws Exception {
+    void shouldRejectListWithoutToken() throws Exception {
         mockMvc.perform(get("/notifications"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void markAsReadReturnsUpdatedNotification() throws Exception {
+    void shouldMarkNotificationAsRead() throws Exception {
         given(jwtService.extractEmail("valid-token")).willReturn("hr@example.com");
         NotificationDto readNotification = new NotificationDto(1L, "5a94", "Leonelle Simco", "Sales",
                 "Flight risk, discuss retention", Instant.parse("2026-01-01T00:00:00Z"),
@@ -128,7 +128,7 @@ class NotificationControllerTest {
     }
 
     @Test
-    void deleteNotificationRemovesItAndReturns204() throws Exception {
+    void shouldDeleteNotification() throws Exception {
         given(jwtService.extractEmail("valid-token")).willReturn("hr@example.com");
 
         mockMvc.perform(delete("/notifications/1").header("Authorization", "Bearer valid-token"))
@@ -136,7 +136,7 @@ class NotificationControllerTest {
     }
 
     @Test
-    void deleteNotificationReturns404WhenNotFound() throws Exception {
+    void shouldReturn404WhenDeletingUnknownNotification() throws Exception {
         given(jwtService.extractEmail("valid-token")).willReturn("hr@example.com");
         doThrow(new NotificationNotFoundException())
                 .when(notificationService).deleteNotification(99L);

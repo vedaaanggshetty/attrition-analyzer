@@ -1,5 +1,6 @@
 package com.example.UserProfileService.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -9,11 +10,14 @@ import jakarta.validation.constraints.NotBlank;
  * email changes are out of scope for this phase (see {@code
  * UserProfile.updateProfile}).
  */
+@Schema(description = "Editable profile fields for the caller's own profile")
 public record UpdateProfileRequest(
 
+        @Schema(description = "Full display name", example = "Jordan A. Lee")
         @NotBlank(message = "Full name is required")
         String fullName,
 
+        @Schema(description = "Contact phone number", example = "+1 555-0100")
         String phone
 ) {
 }

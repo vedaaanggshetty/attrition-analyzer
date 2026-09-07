@@ -21,14 +21,14 @@ class SurveyApiClientIT {
 	private SurveyApiClient surveyApiClient;
 
 	@Test
-	void fetchesRealEmployees() {
+	void shouldFetchRealEmployees() {
 		List<SurveyEmployeeResponse> employees = surveyApiClient.getAllEmployees();
 
 		assertThat(employees).isNotEmpty();
 	}
 
 	@Test
-	void filtersByDepartment() {
+	void shouldFilterByDepartment() {
 		List<SurveyEmployeeResponse> employees = surveyApiClient.findByProperty(Map.of("Department", "Sales"));
 
 		assertThat(employees).isNotEmpty();
@@ -36,7 +36,7 @@ class SurveyApiClientIT {
 	}
 
 	@Test
-	void unknownIdReturns404() {
+	void shouldReturn404ForUnknownId() {
 		assertThatThrownBy(() -> surveyApiClient.getEmployeeById("does-not-exist"))
 				.isInstanceOf(FeignException.NotFound.class);
 	}

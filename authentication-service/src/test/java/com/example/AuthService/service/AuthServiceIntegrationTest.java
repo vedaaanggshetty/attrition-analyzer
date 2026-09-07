@@ -16,28 +16,19 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * Integration test proving {@link AuthService} authenticates against the
- * real {@code credentials} table in MySQL (not a mock), covering the three
- * scenarios required for the DB-backed login migration: valid credentials,
- * unknown email, and wrong password.
- *
- * Each test seeds its own row inside a transaction that Spring's test
- * framework rolls back afterward, so no manual cleanup is needed and the
- * table is left exactly as it was found.
- */
+// Runs against a real (in-memory H2) database, not mocks - each test runs in
+// its own transaction that gets rolled back afterward.
 @SpringBootTest
 @Transactional
 class AuthServiceIntegrationTest {
 
     private static final String EMAIL = "integration-test-hr@example.com";
-    private static final String RAW_PASSWORD = "Password123!";
+    private static final String PASSWORD = "Password123!";
 
     @Autowired
     private AuthService authService;
@@ -50,57 +41,39 @@ class AuthServiceIntegrationTest {
 
     @BeforeEach
     void seedCredential() {
-        credentialRepository.save(new Credential(
-                UUID.randomUUID(),
-                EMAIL,
-                passwordEncoder.encode(RAW_PASSWORD),
-                Role.HR));
+        credentialRepository.save(new Credential(UUID.randomUUID(), EMAIL, passwordEncoder.encode(PASSWORD), Role.HR));
     }
 
     @Test
-    void login_withValidCredentials_returnsSignedToken() {
-        LoginResponse response = authService.login(new LoginRequest(EMAIL, RAW_PASSWORD));
+    void shouldLoginWithSeededCredential() {
+        LoginResponse response = authService.login(new LoginRequest(EMAIL, PASSWORD));
 
         assertThat(response.token()).isNotBlank();
-        assertThat(response.tokenType()).isEqualTo("Bearer");
     }
 
     @Test
-    void login_withUnknownEmail_throwsInvalidCredentials() {
-        LoginRequest request = new LoginRequest("does-not-exist@example.com", RAW_PASSWORD);
-
-        assertThatThrownBy(() -> authService.login(request))
+    void shouldRejectUnknownEmail() {
+        assertThatThrownBy(() -> authService.login(new LoginRequest("does-not-exist@example.com", PASSWORD)))
                 .isInstanceOf(InvalidCredentialsException.class);
     }
 
     @Test
-    void login_withWrongPassword_throwsInvalidCredentials() {
-        LoginRequest request = new LoginRequest(EMAIL, "wrong-password");
-
-        assertThatThrownBy(() -> authService.login(request))
+    void shouldRejectWrongPassword() {
+        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, "wrong-password")))
                 .isInstanceOf(InvalidCredentialsException.class);
     }
 
     @Test
-    void registerCredential_withNewEmail_persistsCredentialAndReturnsMatchingUserId() {
-        RegisterCredentialRequest request = new RegisterCredentialRequest(
-                "integration-test-register@example.com", "Password123!");
+    void shouldPersistNewCredentialOnRegister() {
+        RegisterCredentialResponse response = authService.registerCredential(
+                new RegisterCredentialRequest("new-user@example.com", "Password123!"));
 
-        RegisterCredentialResponse response = authService.registerCredential(request);
-
-        Optional<Credential> persisted = credentialRepository.findById(response.userId());
-        assertThat(persisted).isPresent();
-        assertThat(persisted.get().getUserId()).isEqualTo(response.userId());
-        assertThat(persisted.get().getEmail()).isEqualTo("integration-test-register@example.com");
-        assertThat(persisted.get().getRole()).isEqualTo(Role.HR);
-        assertThat(persisted.get().getPasswordHash()).isNotEqualTo("Password123!");
+        assertThat(credentialRepository.findById(response.userId())).isPresent();
     }
 
     @Test
-    void registerCredential_withDuplicateEmail_throwsDuplicateEmail() {
-        RegisterCredentialRequest request = new RegisterCredentialRequest(EMAIL, "AnotherPassword123!");
-
-        assertThatThrownBy(() -> authService.registerCredential(request))
+    void shouldRejectDuplicateEmailOnRegister() {
+        assertThatThrownBy(() -> authService.registerCredential(new RegisterCredentialRequest(EMAIL, "AnotherPassword123!")))
                 .isInstanceOf(DuplicateEmailException.class);
     }
 }

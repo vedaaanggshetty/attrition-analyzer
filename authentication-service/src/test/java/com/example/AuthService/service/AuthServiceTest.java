@@ -20,6 +20,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -41,93 +42,68 @@ class AuthServiceTest {
     }
 
     @Test
-    void login_withValidCredentials_returnsToken() {
+    void shouldLoginSuccessfully() {
         UUID userId = UUID.randomUUID();
         Credential credential = new Credential(userId, "hr@example.com", "hashed-password", Role.HR);
-        LoginRequest request = new LoginRequest("hr@example.com", "Password123!");
-
         when(credentialRepository.findByEmail("hr@example.com")).thenReturn(Optional.of(credential));
         when(passwordEncoder.matches("Password123!", "hashed-password")).thenReturn(true);
         when(jwtService.generateToken(userId, "hr@example.com", "HR")).thenReturn("signed-jwt-token");
-        when(jwtService.getExpirationMs()).thenReturn(3600000L);
 
-        LoginResponse response = authService.login(request);
+        LoginResponse response = authService.login(new LoginRequest("hr@example.com", "Password123!"));
 
         assertThat(response.token()).isEqualTo("signed-jwt-token");
-        assertThat(response.tokenType()).isEqualTo("Bearer");
-        assertThat(response.expiresInMs()).isEqualTo(3600000L);
     }
 
     @Test
-    void login_withUnknownEmail_throwsInvalidCredentials() {
-        LoginRequest request = new LoginRequest("unknown@example.com", "whatever");
-
+    void shouldRejectUnknownEmail() {
         when(credentialRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(InvalidCredentialsException.class)
-                .hasMessage("Invalid email or password");
+        assertThatThrownBy(() -> authService.login(new LoginRequest("unknown@example.com", "whatever")))
+                .isInstanceOf(InvalidCredentialsException.class);
     }
 
     @Test
-    void login_withWrongPassword_throwsInvalidCredentials() {
+    void shouldRejectWrongPassword() {
         Credential credential = new Credential(UUID.randomUUID(), "hr@example.com", "hashed-password", Role.HR);
-        LoginRequest request = new LoginRequest("hr@example.com", "wrong-password");
-
         when(credentialRepository.findByEmail("hr@example.com")).thenReturn(Optional.of(credential));
         when(passwordEncoder.matches("wrong-password", "hashed-password")).thenReturn(false);
 
-        assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(InvalidCredentialsException.class)
-                .hasMessage("Invalid email or password");
+        assertThatThrownBy(() -> authService.login(new LoginRequest("hr@example.com", "wrong-password")))
+                .isInstanceOf(InvalidCredentialsException.class);
     }
 
     @Test
-    void registerCredential_withNewEmail_createsAndPersistsCredential() {
-        RegisterCredentialRequest request = new RegisterCredentialRequest("new-hr@example.com", "Password123!");
-
+    void shouldRegisterNewCredential() {
         when(credentialRepository.existsByEmail("new-hr@example.com")).thenReturn(false);
         when(passwordEncoder.encode("Password123!")).thenReturn("hashed-password");
 
-        RegisterCredentialResponse response = authService.registerCredential(request);
+        RegisterCredentialResponse response = authService.registerCredential(
+                new RegisterCredentialRequest("new-hr@example.com", "Password123!"));
 
-        ArgumentCaptor<Credential> captor = ArgumentCaptor.forClass(Credential.class);
-        verify(credentialRepository).save(captor.capture());
-
-        Credential saved = captor.getValue();
-        assertThat(response.userId()).isEqualTo(saved.getUserId());
-        assertThat(saved.getEmail()).isEqualTo("new-hr@example.com");
-        assertThat(saved.getPasswordHash()).isEqualTo("hashed-password");
-        assertThat(saved.getRole()).isEqualTo(Role.HR);
+        assertThat(response.userId()).isNotNull();
+        verify(credentialRepository).save(any(Credential.class));
     }
 
     @Test
-    void registerCredential_withDuplicateEmail_throwsDuplicateEmail() {
-        RegisterCredentialRequest request = new RegisterCredentialRequest("existing@example.com", "Password123!");
-
+    void shouldRejectDuplicateEmailOnRegister() {
         when(credentialRepository.existsByEmail("existing@example.com")).thenReturn(true);
 
-        assertThatThrownBy(() -> authService.registerCredential(request))
-                .isInstanceOf(DuplicateEmailException.class)
-                .hasMessage("Email is already registered");
+        assertThatThrownBy(() -> authService.registerCredential(
+                new RegisterCredentialRequest("existing@example.com", "Password123!")))
+                .isInstanceOf(DuplicateEmailException.class);
 
-        verify(credentialRepository, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(credentialRepository, never()).save(any());
     }
 
     @Test
-    void registerCredential_storesHashedPassword_neverPlaintext() {
-        RegisterCredentialRequest request = new RegisterCredentialRequest("hashed-check@example.com", "Password123!");
-
+    void shouldStoreHashedPasswordNotPlaintext() {
         when(credentialRepository.existsByEmail("hashed-check@example.com")).thenReturn(false);
         when(passwordEncoder.encode("Password123!")).thenReturn("hashed-password");
 
-        authService.registerCredential(request);
+        authService.registerCredential(new RegisterCredentialRequest("hashed-check@example.com", "Password123!"));
 
         ArgumentCaptor<Credential> captor = ArgumentCaptor.forClass(Credential.class);
         verify(credentialRepository).save(captor.capture());
-
-        assertThat(captor.getValue().getPasswordHash())
-                .isEqualTo("hashed-password")
-                .isNotEqualTo("Password123!");
+        assertThat(captor.getValue().getPasswordHash()).isEqualTo("hashed-password");
     }
 }

@@ -46,7 +46,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void getEmployeesReturnsList() throws Exception {
+	void shouldReturnAllEmployees() throws Exception {
 		given(employeeService.getAllEmployees()).willReturn(List.of(sampleEmployeeDto()));
 
 		mockMvc.perform(get("/employees"))
@@ -55,7 +55,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void getEmployeesReturns503WhenSurveyApiIsDown() throws Exception {
+	void shouldReturn503WhenSurveyApiIsDown() throws Exception {
 		given(employeeService.getAllEmployees())
 				.willThrow(new SurveyApiException("Survey API down", new RuntimeException()));
 
@@ -64,7 +64,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void searchReturnsMatches() throws Exception {
+	void shouldReturnSearchMatches() throws Exception {
 		given(employeeService.findByProperty("Department", "Sales")).willReturn(List.of(sampleEmployeeDto()));
 
 		mockMvc.perform(get("/employees").param("property", "Department").param("value", "Sales"))
@@ -73,7 +73,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void searchReturnsEmptyArrayWhenNothingMatches() throws Exception {
+	void shouldReturnEmptyArrayWhenSearchMatchesNothing() throws Exception {
 		given(employeeService.findByProperty("Department", "NoSuchDept")).willReturn(List.of());
 
 		mockMvc.perform(get("/employees").param("property", "Department").param("value", "NoSuchDept"))
@@ -82,13 +82,13 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void searchWithoutValueReturnsBadRequest() throws Exception {
+	void shouldRejectSearchMissingValue() throws Exception {
 		mockMvc.perform(get("/employees").param("property", "Department"))
 				.andExpect(status().isBadRequest());
 	}
 
 	@Test
-	void getEmployeeReturnsDetailsWhenFound() throws Exception {
+	void shouldReturnEmployeeDetails() throws Exception {
 		given(employeeService.getEmployeeById("5a94")).willReturn(Optional.of(sampleEmployeeDto()));
 
 		mockMvc.perform(get("/employees/5a94"))
@@ -97,7 +97,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void getEmployeeReturns404WhenNotFound() throws Exception {
+	void shouldReturn404WhenEmployeeNotFound() throws Exception {
 		given(employeeService.getEmployeeById("missing")).willReturn(Optional.empty());
 
 		mockMvc.perform(get("/employees/missing"))
@@ -105,7 +105,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void flagEmployeeReturns202WhenFound() throws Exception {
+	void shouldFlagEmployeeSuccessfully() throws Exception {
 		given(jwtService.extractEmail("token")).willReturn("hr@example.com");
 		EmployeeFlaggedEvent event = new EmployeeFlaggedEvent(
 				UUID.randomUUID(), "3012-1A41", "Leonelle Simco", "Sales", "Watch closely",
@@ -121,7 +121,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void flagEmployeeReturns404WhenNotFound() throws Exception {
+	void shouldReturn404WhenFlaggingUnknownEmployee() throws Exception {
 		given(jwtService.extractEmail("token")).willReturn("hr@example.com");
 		given(employeeService.flagEmployee("missing", "Watch closely", "hr@example.com", null))
 				.willReturn(Optional.empty());
@@ -134,7 +134,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void flagEmployeeReturns401WhenNoAuthorizationHeader() throws Exception {
+	void shouldRejectFlagWithoutToken() throws Exception {
 		mockMvc.perform(post("/employees/5a94/flag")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("{\"comment\":\"Watch closely\"}"))
@@ -142,7 +142,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void flagEmployeeReturns503WhenKafkaPublicationFails() throws Exception {
+	void shouldReturn503WhenKafkaPublishFails() throws Exception {
 		given(jwtService.extractEmail("token")).willReturn("hr@example.com");
 		given(employeeService.flagEmployee("5a94", "Watch closely", "hr@example.com", null))
 				.willThrow(new com.example.EmployeeService.exception.EventPublicationException(
@@ -156,7 +156,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void getAttritionByDepartmentReturnsAggregatedResults() throws Exception {
+	void shouldReturnAttritionByDepartment() throws Exception {
 		given(employeeService.getAttritionByDepartment()).willReturn(List.of(
 				new AttritionAnalysisDto("Sales", 4, 2, 50.0)));
 
@@ -169,7 +169,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void getAttritionByDepartmentReturns503WhenSurveyApiIsDown() throws Exception {
+	void shouldReturn503ForAttritionWhenSurveyApiIsDown() throws Exception {
 		given(employeeService.getAttritionByDepartment())
 				.willThrow(new SurveyApiException("Survey API down", new RuntimeException()));
 
@@ -178,7 +178,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void getAttritionByJobRoleReturnsAggregatedResults() throws Exception {
+	void shouldReturnAttritionByJobRole() throws Exception {
 		given(employeeService.getAttritionByJobRole()).willReturn(List.of(
 				new AttritionAnalysisDto("Sales Executive", 2, 1, 50.0)));
 
@@ -188,7 +188,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void getAttritionByCompensationReturnsAggregatedResults() throws Exception {
+	void shouldReturnAttritionByCompensation() throws Exception {
 		given(employeeService.getAttritionByCompensation()).willReturn(List.of(
 				new AttritionAnalysisDto("$50000-$99999", 3, 1, 33.33)));
 
@@ -198,7 +198,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void getAttritionByDemographicsReturnsAggregatedResults() throws Exception {
+	void shouldReturnAttritionByDemographics() throws Exception {
 		given(employeeService.getAttritionByDemographics()).willReturn(List.of(
 				new AttritionAnalysisDto("Female", 5, 1, 20.0)));
 
@@ -208,7 +208,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void getAttritionByWorkLifeBalanceReturnsAggregatedResults() throws Exception {
+	void shouldReturnAttritionByWorkLifeBalance() throws Exception {
 		given(employeeService.getAttritionByWorkLifeBalance()).willReturn(List.of(
 				new AttritionAnalysisDto("Yes", 2, 2, 100.0)));
 
@@ -218,7 +218,7 @@ class EmployeeControllerTest {
 	}
 
 	@Test
-	void getAttritionByCareerProgressionReturnsAggregatedResults() throws Exception {
+	void shouldReturnAttritionByCareerProgression() throws Exception {
 		given(employeeService.getAttritionByCareerProgression()).willReturn(List.of(
 				new AttritionAnalysisDto("0-2 years", 1, 0, 0.0)));
 

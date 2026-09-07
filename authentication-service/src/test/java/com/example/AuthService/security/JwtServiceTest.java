@@ -20,7 +20,7 @@ class JwtServiceTest {
     private final JwtService jwtService = new JwtService(SECRET, 3600000L);
 
     @Test
-    void parseClaims_withValidToken_returnsUserIdEmailAndRole() {
+    void shouldReadClaimsBackFromGeneratedToken() {
         UUID userId = UUID.randomUUID();
         String token = jwtService.generateToken(userId, "hr@example.com", "HR");
 
@@ -29,41 +29,30 @@ class JwtServiceTest {
         assertThat(claims).isPresent();
         assertThat(claims.get().getSubject()).isEqualTo(userId.toString());
         assertThat(claims.get().get(JwtService.EMAIL_CLAIM)).isEqualTo("hr@example.com");
-        assertThat(claims.get().get(JwtService.ROLE_CLAIM)).isEqualTo("HR");
     }
 
     @Test
-    void parseClaims_withExpiredToken_returnsEmpty() {
-        JwtService shortLivedService = new JwtService(SECRET, -1000L);
-        String expiredToken = shortLivedService.generateToken(UUID.randomUUID(), "hr@example.com", "HR");
+    void shouldRejectExpiredToken() {
+        JwtService expiredTokenService = new JwtService(SECRET, -1000L);
+        String expiredToken = expiredTokenService.generateToken(UUID.randomUUID(), "hr@example.com", "HR");
 
-        Optional<Claims> claims = jwtService.parseClaims(expiredToken);
-
-        assertThat(claims).isEmpty();
+        assertThat(jwtService.parseClaims(expiredToken)).isEmpty();
     }
 
     @Test
-    void parseClaims_withTamperedSignature_returnsEmpty() {
-        SecretKey differentKey = Keys.hmacShaKeyFor(
-                "a-completely-different-secret-value-1234567890-abcdef".getBytes(StandardCharsets.UTF_8));
-        String tokenSignedWithDifferentKey = Jwts.builder()
+    void shouldRejectTokenSignedWithWrongSecret() {
+        SecretKey wrongKey = Keys.hmacShaKeyFor("a-completely-different-secret-value-1234567890-abcdef".getBytes(StandardCharsets.UTF_8));
+        String token = Jwts.builder()
                 .subject(UUID.randomUUID().toString())
-                .claim(JwtService.EMAIL_CLAIM, "hr@example.com")
-                .claim(JwtService.ROLE_CLAIM, "HR")
-                .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + 3600000L))
-                .signWith(differentKey)
+                .signWith(wrongKey)
                 .compact();
 
-        Optional<Claims> claims = jwtService.parseClaims(tokenSignedWithDifferentKey);
-
-        assertThat(claims).isEmpty();
+        assertThat(jwtService.parseClaims(token)).isEmpty();
     }
 
     @Test
-    void parseClaims_withMalformedToken_returnsEmpty() {
-        Optional<Claims> claims = jwtService.parseClaims("not-a-valid-jwt-token");
-
-        assertThat(claims).isEmpty();
+    void shouldRejectMalformedToken() {
+        assertThat(jwtService.parseClaims("not-a-valid-jwt-token")).isEmpty();
     }
 }

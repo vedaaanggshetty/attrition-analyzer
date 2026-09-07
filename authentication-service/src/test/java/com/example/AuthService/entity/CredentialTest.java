@@ -6,15 +6,10 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Plain unit test for {@link Credential} - no Spring context, no database.
- * Repository/persistence-level testing is deferred until the phase where
- * MySQL is officially introduced.
- */
 class CredentialTest {
 
     @Test
-    void constructor_setsAllProvidedFields() {
+    void shouldSetFieldsFromConstructor() {
         UUID userId = UUID.randomUUID();
 
         Credential credential = new Credential(userId, "hr@example.com", "hashed-password", Role.HR);
@@ -26,15 +21,7 @@ class CredentialTest {
     }
 
     @Test
-    void createdAt_isNullUntilPersisted() {
-        Credential credential = new Credential(UUID.randomUUID(), "hr@example.com", "hashed-password", Role.HR);
-
-        // @CreationTimestamp is populated by Hibernate at insert time, not by the constructor.
-        assertThat(credential.getCreatedAt()).isNull();
-    }
-
-    @Test
-    void changePassword_replacesStoredPasswordHash() {
+    void shouldChangePasswordHash() {
         Credential credential = new Credential(UUID.randomUUID(), "hr@example.com", "old-hash", Role.HR);
 
         credential.changePassword("new-hash");

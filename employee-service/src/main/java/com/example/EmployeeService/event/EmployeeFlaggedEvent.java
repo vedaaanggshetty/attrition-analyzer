@@ -1,5 +1,7 @@
 package com.example.EmployeeService.event;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -8,6 +10,7 @@ import java.util.UUID;
  * flags an employee for Notification Service to act on. {@code eventId} is
  * the idempotency key the consumer uses to reject duplicate deliveries.
  */
+@Schema(description = "Echoed back to the caller of POST /employees/{id}/flag - the same event published to Kafka")
 public record EmployeeFlaggedEvent(
 		UUID eventId,
 		String employeeId,

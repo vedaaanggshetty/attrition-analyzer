@@ -30,7 +30,7 @@ class EmployeeFlaggedEventListenerTest {
     }
 
     @Test
-    void onEmployeeFlaggedCreatesNotification() {
+    void shouldCreateNotificationFromEvent() {
         listener = new EmployeeFlaggedEventListener(notificationService);
         EmployeeFlaggedEvent event = sampleEvent();
         given(notificationService.createFromEvent(event)).willReturn(true);
@@ -39,7 +39,7 @@ class EmployeeFlaggedEventListenerTest {
     }
 
     @Test
-    void onEmployeeFlaggedSwallowsOnlyTheEventIdDuplicateConstraintViolation() {
+    void shouldIgnoreDuplicateEventIdViolation() {
         listener = new EmployeeFlaggedEventListener(notificationService);
         EmployeeFlaggedEvent event = sampleEvent();
         willThrow(new DataIntegrityViolationException("Duplicate entry for key 'event_id'",
@@ -50,7 +50,7 @@ class EmployeeFlaggedEventListenerTest {
     }
 
     @Test
-    void onEmployeeFlaggedPropagatesUnrelatedConstraintViolations() {
+    void shouldPropagateUnrelatedConstraintViolation() {
         listener = new EmployeeFlaggedEventListener(notificationService);
         EmployeeFlaggedEvent event = sampleEvent();
         willThrow(new DataIntegrityViolationException("Field 'hr_user_id' doesn't have a default value",
@@ -62,7 +62,7 @@ class EmployeeFlaggedEventListenerTest {
     }
 
     @Test
-    void onEmployeeFlaggedPropagatesOtherFailures() {
+    void shouldPropagateOtherFailures() {
         listener = new EmployeeFlaggedEventListener(notificationService);
         EmployeeFlaggedEvent event = sampleEvent();
         willThrow(new RuntimeException("db down"))

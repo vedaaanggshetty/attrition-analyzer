@@ -41,7 +41,7 @@ class AuthControllerTest {
     private AuthService authService;
 
     @Test
-    void login_withValidCredentials_returns200AndToken() throws Exception {
+    void shouldLoginSuccessfully() throws Exception {
         LoginRequest request = new LoginRequest("hr@example.com", "Password123!");
         LoginResponse response = new LoginResponse("signed-jwt-token", "Bearer", 3600000L);
 
@@ -56,7 +56,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void login_withInvalidCredentials_returns401() throws Exception {
+    void shouldRejectInvalidCredentials() throws Exception {
         LoginRequest request = new LoginRequest("hr@example.com", "wrong-password");
 
         when(authService.login(any(LoginRequest.class))).thenThrow(new InvalidCredentialsException());
@@ -69,7 +69,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void login_withBlankEmail_returns400() throws Exception {
+    void shouldRejectBlankEmail() throws Exception {
         LoginRequest request = new LoginRequest("", "Password123!");
 
         mockMvc.perform(post("/auth/login")
@@ -79,7 +79,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void logout_withValidToken_returns200() throws Exception {
+    void shouldLogoutWithValidToken() throws Exception {
         String token = jwtService.generateToken(UUID.randomUUID(), "hr@example.com", "HR");
 
         mockMvc.perform(post("/auth/logout")
@@ -89,7 +89,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void logout_withoutToken_returns403() throws Exception {
+    void shouldRejectLogoutWithoutToken() throws Exception {
         mockMvc.perform(post("/auth/logout"))
                 .andExpect(status().isForbidden());
     }

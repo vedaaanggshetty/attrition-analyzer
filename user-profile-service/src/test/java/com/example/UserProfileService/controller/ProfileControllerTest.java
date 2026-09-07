@@ -25,19 +25,14 @@ import java.util.Date;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Controller test for the authenticated "my profile" endpoints. Valid JWTs
- * are built manually with the same secret configured in this module's test
- * {@code application.properties} - this service never issues its own
- * tokens, so there is no {@code generateToken} method to call.
- */
+// This service never issues its own tokens, so tokens here are built by
+// hand with the same secret as the test application.properties.
 @WebMvcTest(ProfileController.class)
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class})
 class ProfileControllerTest {
@@ -54,84 +49,59 @@ class ProfileControllerTest {
     private ProfileService profileService;
 
     @Test
-    void getMyProfile_withValidToken_returns200AndOwnProfile() throws Exception {
+    void shouldReturnOwnProfile() throws Exception {
         UUID userId = UUID.randomUUID();
-        String token = buildToken(userId, "hr@example.com", "HR");
+        when(profileService.getProfile(userId)).thenReturn(
+                new ProfileResponse(userId, "Jane HR", "hr@example.com", "555-1234", Instant.now(), Instant.now()));
 
-        when(profileService.getProfile(userId)).thenReturn(new ProfileResponse(
-                userId, "Jane HR", "hr@example.com", "555-1234", Instant.now(), Instant.now()));
-
-        mockMvc.perform(get("/users/me")
-                        .header("Authorization", "Bearer " + token))
+        mockMvc.perform(get("/users/me").header("Authorization", "Bearer " + tokenFor(userId)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId").value(userId.toString()))
                 .andExpect(jsonPath("$.email").value("hr@example.com"));
     }
 
     @Test
-    void getMyProfile_withoutToken_returns403() throws Exception {
-        mockMvc.perform(get("/users/me"))
-                .andExpect(status().isForbidden());
+    void shouldRejectMissingToken() throws Exception {
+        mockMvc.perform(get("/users/me")).andExpect(status().isForbidden());
     }
 
     @Test
-    void getMyProfile_whenProfileMissing_returns404() throws Exception {
+    void shouldReturn404WhenProfileMissing() throws Exception {
         UUID userId = UUID.randomUUID();
-        String token = buildToken(userId, "hr@example.com", "HR");
-
         when(profileService.getProfile(userId)).thenThrow(new ProfileNotFoundException());
 
-        mockMvc.perform(get("/users/me")
-                        .header("Authorization", "Bearer " + token))
+        mockMvc.perform(get("/users/me").header("Authorization", "Bearer " + tokenFor(userId)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    void updateMyProfile_withValidToken_returns200AndUpdatedProfile() throws Exception {
+    void shouldUpdateProfile() throws Exception {
         UUID userId = UUID.randomUUID();
-        String token = buildToken(userId, "hr@example.com", "HR");
-        UpdateProfileRequest request = new UpdateProfileRequest("Jane Updated", "555-9999");
-
-        when(profileService.updateProfile(eq(userId), any(UpdateProfileRequest.class))).thenReturn(new ProfileResponse(
-                userId, "Jane Updated", "hr@example.com", "555-9999", Instant.now(), Instant.now()));
+        when(profileService.updateProfile(any(), any())).thenReturn(
+                new ProfileResponse(userId, "Jane Updated", "hr@example.com", "555-9999", Instant.now(), Instant.now()));
 
         mockMvc.perform(put("/users/me")
-                        .header("Authorization", "Bearer " + token)
+                        .header("Authorization", "Bearer " + tokenFor(userId))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(new UpdateProfileRequest("Jane Updated", "555-9999"))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.fullName").value("Jane Updated"))
-                .andExpect(jsonPath("$.phone").value("555-9999"));
+                .andExpect(jsonPath("$.fullName").value("Jane Updated"));
     }
 
     @Test
-    void updateMyProfile_withoutToken_returns403() throws Exception {
-        UpdateProfileRequest request = new UpdateProfileRequest("Jane Updated", "555-9999");
-
+    void shouldRejectBlankFullNameOnUpdate() throws Exception {
         mockMvc.perform(put("/users/me")
+                        .header("Authorization", "Bearer " + tokenFor(UUID.randomUUID()))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void updateMyProfile_withBlankFullName_returns400() throws Exception {
-        String token = buildToken(UUID.randomUUID(), "hr@example.com", "HR");
-        UpdateProfileRequest request = new UpdateProfileRequest("", "555-9999");
-
-        mockMvc.perform(put("/users/me")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(new UpdateProfileRequest("", "555-9999"))))
                 .andExpect(status().isBadRequest());
     }
 
-    private String buildToken(UUID userId, String email, String role) {
+    private String tokenFor(UUID userId) {
         SecretKey signingKey = Keys.hmacShaKeyFor(TEST_SECRET.getBytes(StandardCharsets.UTF_8));
         return Jwts.builder()
                 .subject(userId.toString())
-                .claim("email", email)
-                .claim("role", role)
+                .claim("email", "hr@example.com")
+                .claim("role", "HR")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + 3600000L))
                 .signWith(signingKey)

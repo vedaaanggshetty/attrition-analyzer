@@ -44,7 +44,7 @@ class NotificationServiceTest {
     }
 
     @Test
-    void createNotificationSavesAndReturnsNotificationForCurrentUser() {
+    void shouldSaveAndReturnNotification() {
         CreateNotificationRequest request = new CreateNotificationRequest(
                 "5a94", "Leonelle Simco", "Sales", "Flight risk, discuss retention", "HR User");
         ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
@@ -66,7 +66,7 @@ class NotificationServiceTest {
     }
 
     @Test
-    void createFromEventSavesNotificationWithEventId() {
+    void shouldSaveNotificationFromEvent() {
         UUID eventId = UUID.randomUUID();
         EmployeeFlaggedEvent event = new EmployeeFlaggedEvent(
                 eventId, "5a94", "Leonelle Simco", "Sales", "Flight risk", "hr@example.com", "HR User", Instant.now());
@@ -85,7 +85,7 @@ class NotificationServiceTest {
     }
 
     @Test
-    void createFromEventIsNoOpForDuplicateEventId() {
+    void shouldIgnoreDuplicateEvent() {
         UUID eventId = UUID.randomUUID();
         EmployeeFlaggedEvent event = new EmployeeFlaggedEvent(
                 eventId, "5a94", "Leonelle Simco", "Sales", "Flight risk", "hr@example.com", "HR User", Instant.now());
@@ -98,7 +98,7 @@ class NotificationServiceTest {
     }
 
     @Test
-    void getAllNotificationsReturnsMappedListRegardlessOfCreator() {
+    void shouldReturnAllNotificationsRegardlessOfCreator() {
         given(notificationRepository.findAllByOrderByCreatedAtDesc())
                 .willReturn(List.of(sampleNotification("someone-else@example.com")));
 
@@ -111,7 +111,7 @@ class NotificationServiceTest {
     }
 
     @Test
-    void getAllNotificationsFallsBackToEmailWhenNameMissing() {
+    void shouldFallBackToEmailWhenNameMissing() {
         Notification notification = new Notification(
                 "5a94", "Leonelle Simco", "Sales", "someone-else@example.com", null, "Flight risk, discuss retention");
         given(notificationRepository.findAllByOrderByCreatedAtDesc()).willReturn(List.of(notification));
@@ -122,14 +122,14 @@ class NotificationServiceTest {
     }
 
     @Test
-    void getAllNotificationsReturnsEmptyListWhenNoneExist() {
+    void shouldReturnEmptyListWhenNoneExist() {
         given(notificationRepository.findAllByOrderByCreatedAtDesc()).willReturn(List.of());
 
         assertThat(notificationService.getAllNotifications()).isEmpty();
     }
 
     @Test
-    void markAsReadSetsReadFlag() {
+    void shouldMarkNotificationAsRead() {
         Notification notification = sampleNotification("hr@example.com");
         given(notificationRepository.findById(1L)).willReturn(Optional.of(notification));
         given(notificationRepository.save(notification)).willReturn(notification);
@@ -141,7 +141,7 @@ class NotificationServiceTest {
     }
 
     @Test
-    void markAsReadThrowsWhenNotFound() {
+    void shouldThrowWhenMarkingUnknownNotificationRead() {
         given(notificationRepository.findById(99L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> notificationService.markAsRead(99L))
@@ -149,7 +149,7 @@ class NotificationServiceTest {
     }
 
     @Test
-    void deleteNotificationRemovesNotificationRegardlessOfCreator() {
+    void shouldDeleteNotificationRegardlessOfCreator() {
         Notification notification = sampleNotification("someone-else@example.com");
         given(notificationRepository.findById(1L)).willReturn(Optional.of(notification));
 
@@ -159,7 +159,7 @@ class NotificationServiceTest {
     }
 
     @Test
-    void deleteNotificationThrowsWhenNotFound() {
+    void shouldThrowWhenDeletingUnknownNotification() {
         given(notificationRepository.findById(99L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> notificationService.deleteNotification(99L))

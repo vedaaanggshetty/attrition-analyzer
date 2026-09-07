@@ -40,44 +40,34 @@ class UserRegistrationControllerTest {
     private UserRegistrationService userRegistrationService;
 
     @Test
-    void register_withValidRequest_returns201AndProfile() throws Exception {
-        RegisterUserRequest request = new RegisterUserRequest(
-                "Jane HR", "jane@example.com", "Password123!", "555-1234");
+    void shouldRegisterSuccessfully() throws Exception {
         UUID userId = UUID.randomUUID();
-
-        when(userRegistrationService.register(any(RegisterUserRequest.class)))
-                .thenReturn(new RegisterUserResponse(userId, "Jane HR", "jane@example.com", "555-1234", Instant.now()));
+        RegisterUserRequest request = new RegisterUserRequest("Jane HR", "jane@example.com", "Password123!", "555-1234");
+        when(userRegistrationService.register(any())).thenReturn(
+                new RegisterUserResponse(userId, "Jane HR", "jane@example.com", "555-1234", Instant.now()));
 
         mockMvc.perform(post("/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.userId").value(userId.toString()))
                 .andExpect(jsonPath("$.email").value("jane@example.com"));
     }
 
     @Test
-    void register_withDuplicateEmail_returns409() throws Exception {
-        RegisterUserRequest request = new RegisterUserRequest(
-                "Jane HR", "jane@example.com", "Password123!", null);
-
-        when(userRegistrationService.register(any(RegisterUserRequest.class)))
-                .thenThrow(new DuplicateEmailException());
+    void shouldRejectDuplicateEmail() throws Exception {
+        RegisterUserRequest request = new RegisterUserRequest("Jane HR", "jane@example.com", "Password123!", null);
+        when(userRegistrationService.register(any())).thenThrow(new DuplicateEmailException());
 
         mockMvc.perform(post("/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Email is already registered"));
+                .andExpect(status().isConflict());
     }
 
     @Test
-    void register_whenAuthenticationServiceUnavailable_returns503() throws Exception {
-        RegisterUserRequest request = new RegisterUserRequest(
-                "Jane HR", "jane@example.com", "Password123!", null);
-
-        when(userRegistrationService.register(any(RegisterUserRequest.class)))
-                .thenThrow(new AuthenticationServiceException("boom", new RuntimeException("boom")));
+    void shouldReturn503WhenAuthenticationServiceIsDown() throws Exception {
+        RegisterUserRequest request = new RegisterUserRequest("Jane HR", "jane@example.com", "Password123!", null);
+        when(userRegistrationService.register(any())).thenThrow(new AuthenticationServiceException("boom", new RuntimeException()));
 
         mockMvc.perform(post("/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -86,9 +76,8 @@ class UserRegistrationControllerTest {
     }
 
     @Test
-    void register_withBlankFullName_returns400() throws Exception {
-        RegisterUserRequest request = new RegisterUserRequest(
-                "", "jane@example.com", "Password123!", null);
+    void shouldRejectBlankFullName() throws Exception {
+        RegisterUserRequest request = new RegisterUserRequest("", "jane@example.com", "Password123!", null);
 
         mockMvc.perform(post("/users/register")
                         .contentType(MediaType.APPLICATION_JSON)

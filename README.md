@@ -171,6 +171,8 @@ This README stays high-level. Everything else lives in `docs/`:
 - [Kafka](docs/backend/kafka.md) — the `employee.flagged` flow end to end
 - [Database](docs/backend/database.md) — the single MySQL server, three databases, schema
 - [Docker](docs/backend/docker.md) — container reference table, dependency graph, commands
+- [Swagger / OpenAPI & Health Checks](docs/backend/swagger.md) — API docs, `/actuator/health`, annotations used and why
+- [Testing](docs/backend/testing.md) — what each test class proves, per service
 - [Frontend](docs/frontend/frontend.md) — routes, auth state, API connection, Docker
 
 ---

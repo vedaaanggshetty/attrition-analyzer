@@ -74,7 +74,7 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void getAllEmployeesReturnsMappedList() {
+	void shouldReturnMappedEmployeeList() {
 		given(surveyApiClient.getAllEmployees()).willReturn(List.of(sampleResponse()));
 
 		List<EmployeeDto> employees = employeeService.getAllEmployees();
@@ -84,14 +84,14 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void findByPropertyReturnsEmptyListWhenNothingMatches() {
+	void shouldReturnEmptyListWhenSearchMatchesNothing() {
 		given(surveyApiClient.findByProperty(any())).willReturn(List.of());
 
 		assertThat(employeeService.findByProperty("Department", "NoSuchDept")).isEmpty();
 	}
 
 	@Test
-	void getEmployeeByIdReturnsEmptyWhenNotFound() {
+	void shouldReturnEmptyWhenEmployeeNotFound() {
 		given(surveyApiClient.getEmployeeById("missing")).willThrow(feignError(404));
 
 		Optional<EmployeeDto> employee = employeeService.getEmployeeById("missing");
@@ -100,7 +100,7 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void getAllEmployeesThrowsSurveyApiExceptionOnFailure() {
+	void shouldThrowWhenSurveyApiFails() {
 		given(surveyApiClient.getAllEmployees()).willThrow(feignError(500));
 
 		assertThatThrownBy(() -> employeeService.getAllEmployees())
@@ -108,7 +108,7 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void flagEmployeePublishesEventWithExpectedContents() {
+	void shouldPublishFlagEvent() {
 		given(surveyApiClient.getEmployeeById("5a94")).willReturn(sampleResponse());
 
 		Optional<com.example.EmployeeService.event.EmployeeFlaggedEvent> result =
@@ -129,7 +129,7 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void flagEmployeeReturnsEmptyWhenEmployeeNotFound() {
+	void shouldReturnEmptyWhenFlaggingUnknownEmployee() {
 		given(surveyApiClient.getEmployeeById("missing")).willThrow(feignError(404));
 
 		Optional<com.example.EmployeeService.event.EmployeeFlaggedEvent> result =
@@ -140,7 +140,7 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void flagEmployeePropagatesEventPublicationFailure() {
+	void shouldPropagateKafkaPublishFailure() {
 		given(surveyApiClient.getEmployeeById("5a94")).willReturn(sampleResponse());
 		willThrow(new com.example.EmployeeService.exception.EventPublicationException("Kafka down", new RuntimeException()))
 				.given(eventProducer).publish(any());
@@ -150,7 +150,7 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void getAttritionByDepartmentGroupsAndCalculatesRateCorrectly() {
+	void shouldCalculateAttritionRateByDepartment() {
 		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
 				responseWith("Sales", "Yes"),
 				responseWith("Sales", "No"),
@@ -177,14 +177,14 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void getAttritionByDepartmentReturnsEmptyListWhenNoEmployees() {
+	void shouldReturnEmptyListWhenNoEmployees() {
 		given(surveyApiClient.getAllEmployees()).willReturn(List.of());
 
 		assertThat(employeeService.getAttritionByDepartment()).isEmpty();
 	}
 
 	@Test
-	void getAttritionByDepartmentGroupsBlankDepartmentAsUnknown() {
+	void shouldGroupBlankDepartmentAsUnknown() {
 		given(surveyApiClient.getAllEmployees()).willReturn(List.of(responseWith("", "Yes")));
 
 		List<AttritionAnalysisDto> result = employeeService.getAttritionByDepartment();
@@ -194,7 +194,7 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void getAttritionByDepartmentThrowsSurveyApiExceptionOnFailure() {
+	void shouldThrowWhenSurveyApiFailsDuringAnalysis() {
 		given(surveyApiClient.getAllEmployees()).willThrow(feignError(500));
 
 		assertThatThrownBy(() -> employeeService.getAttritionByDepartment())
@@ -202,7 +202,7 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void getAttritionByJobRoleGroupsCorrectly() {
+	void shouldCalculateAttritionRateByJobRole() {
 		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
 				response("Sales Executive", "Female", 100000, "No", 1, "Yes"),
 				response("Sales Executive", "Male", 100000, "No", 1, "No"),
@@ -223,7 +223,7 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void getAttritionByCompensationBucketsSalaryIntoFiftyThousandBands() {
+	void shouldBucketSalaryIntoBands() {
 		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
 				response("Sales Executive", "Female", 40000, "No", 1, "Yes"),
 				response("Sales Executive", "Male", 45000, "No", 1, "No"),
@@ -240,7 +240,7 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void getAttritionByCompensationTreatsNullSalaryAsUnknown() {
+	void shouldTreatNullSalaryAsUnknown() {
 		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
 				response("Sales Executive", "Female", null, "No", 1, "No")));
 
@@ -251,7 +251,7 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void getAttritionByDemographicsGroupsByGender() {
+	void shouldCalculateAttritionRateByGender() {
 		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
 				response("Sales Executive", "Female", 100000, "No", 1, "Yes"),
 				response("Sales Executive", "Male", 100000, "No", 1, "No")));
@@ -264,7 +264,7 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void getAttritionByWorkLifeBalanceGroupsByOverTime() {
+	void shouldCalculateAttritionRateByOverTime() {
 		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
 				response("Sales Executive", "Female", 100000, "Yes", 1, "Yes"),
 				response("Sales Executive", "Male", 100000, "Yes", 1, "Yes"),
@@ -282,7 +282,7 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void getAttritionByCareerProgressionBucketsYearsSincePromotion() {
+	void shouldBucketYearsSincePromotion() {
 		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
 				response("Sales Executive", "Female", 100000, "No", 1, "No"),
 				response("Sales Executive", "Male", 100000, "No", 4, "No"),
@@ -298,7 +298,7 @@ class EmployeeServiceTest {
 	}
 
 	@Test
-	void getAttritionByCareerProgressionTreatsNullYearsAsUnknown() {
+	void shouldTreatNullYearsSincePromotionAsUnknown() {
 		given(surveyApiClient.getAllEmployees()).willReturn(List.of(
 				response("Sales Executive", "Female", 100000, "No", null, "No")));
 
